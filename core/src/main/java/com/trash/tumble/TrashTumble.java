@@ -15,7 +15,7 @@ public class TrashTumble extends ApplicationAdapter {
     @Override
     public void create() {
         batch = new SpriteBatch();
-        image = new Texture("libgdx.png");
+        image = new Texture("trashbag.png");
     }
 
     @Override
