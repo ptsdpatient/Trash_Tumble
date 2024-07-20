@@ -34,7 +34,7 @@ public class LevelEdit implements Screen {
     private Texture[] backgrounds=new Texture[4];
     float worldWidth=1280/2f,worldHeight=780/2f;
 
-    TextureRegion[] editButtonSheet,uiBoxSheet,editObjectSheet,editPanelButtonSheet,trashBagSheet,trashCanSheet,panelObjectSheet;
+    TextureRegion[] editButtonSheet,uiBoxSheet,editObjectSheet,editPanelButtonSheet,trashBagSheet,trashCanSheet,panelObjectSheet,specialObjectSheet;
     String[] levelMenuButton={"close","done","toggle"};
     String[] editObjectName={"rotate","sizeUP","sizeDOWN","delete"};
 
@@ -47,6 +47,7 @@ public class LevelEdit implements Screen {
     Array<PanelTrashBag> panelTrashBags = new Array<>();
     Array<PanelTrashCan> panelTrashCans = new Array<>();
     Array<PanelObject> panelObjects= new Array<>();
+    Array<SpecialObject> specialObjects= new Array<>();
 
 
     int currentBG=0,panelIndex=0;
@@ -80,7 +81,7 @@ public class LevelEdit implements Screen {
         trashBagSheet=extractSprite(files("trashbag_sheet.png"),128,128);
         trashCanSheet=extractSprite(files("trashcan_sheet.png"),192,192);
         panelObjectSheet=extractSprite(files("objects_sheet.png"),64,64);
-
+        specialObjectSheet=extractSprite(files("special_object_sheet.png"),64,64);
 
         for(int i=0;i<3;i++){
             editPanelButtons.add(new EditPanelButton(editPanelButtonSheet[i],i));
@@ -104,17 +105,62 @@ public class LevelEdit implements Screen {
             }
         }
 
+        index=0;
+        for(int i=0;i<3;i++){
+            for(int j=0;j<3;j++){
+                specialObjects.add(new SpecialObject(specialObjectSheet[index],j*64,720/2f-100-(15+i*50),index,true));
+                index++;
+            }
+        }
+
         uiBoxSheet=extractSprite(files("ui_box_sheet.png"),64,64);
 
 
     }
 
+    public class SpecialObject{
+        Sprite button;
+        Rectangle bounds;
+        boolean active=false,spawn=false;
+        float scale=0.65f;
+
+        public SpecialObject(TextureRegion tex,float x,float y,int id,boolean spawn){
+
+            button=new Sprite(tex);
+            button.setPosition(x,y);
+            if(spawn){
+                switch(id){
+                    case 0 :{
+
+                    }break;
+                }
+            }
+            button.setScale(scale);
+        }
+        public void render(SpriteBatch sb){
+            sb.draw(uiBoxSheet[3],button.getX()+10,button.getY()+11,button.getWidth()/1.5f,button.getHeight()/1.5f);
+
+            button.draw(sb);
+
+            if(active){
+                if(scale<0.75f){
+                    scale+=Gdx.graphics.getDeltaTime()*1.7f;
+                }
+                button.setScale(scale);
+            }else{
+                if(scale>0.65f){
+                    scale-=Gdx.graphics.getDeltaTime();
+                    button.setScale(scale);
+                }
+            }
+        }
+    }
 
     public class PanelObject{
         Sprite button;
         Rectangle bounds;
         boolean active=false,spawn=false;
-        float scale=0.6f;
+        float scale=0.65f;
 
 
         public PanelObject(TextureRegion tex,float x,float y,int id,boolean spawn){
@@ -137,12 +183,12 @@ public class LevelEdit implements Screen {
 
 
             if(active){
-                if(scale<0.9f){
-                    scale+=Gdx.graphics.getDeltaTime()*1.1f;
+                if(scale<0.75f){
+                    scale+=Gdx.graphics.getDeltaTime()*1.7f;
                 }
                 button.setScale(scale);
             }else{
-                if(scale>0.6f){
+                if(scale>0.65f){
                     scale-=Gdx.graphics.getDeltaTime();
                     button.setScale(scale);
                 }
@@ -474,6 +520,12 @@ public class LevelEdit implements Screen {
             for(PanelTrashCanButton button : panelTrashCanButtons){
                 button.active=button.button.getBoundingRectangle().contains(point);
             }
+            for(PanelObject button : panelObjects){
+                button.active=button.button.getBoundingRectangle().contains(point);
+            }
+            for(SpecialObject button : specialObjects){
+                button.active=button.button.getBoundingRectangle().contains(point);
+            }
 
 
             return false;
@@ -523,6 +575,11 @@ public class LevelEdit implements Screen {
                 }break;
                 case 1:{
                     for(PanelObject obj : panelObjects){
+                        obj.render(batch);
+                    }
+                }break;
+                case 2:{
+                    for(SpecialObject obj : specialObjects){
                         obj.render(batch);
                     }
                 }break;

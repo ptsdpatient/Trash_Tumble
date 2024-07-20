@@ -2,8 +2,8 @@ package com.trash.tumble;
 
 import com.badlogic.gdx.Screen;
 
-public class PauseScreen implements Screen {
-    public PauseScreen(TrashTumble game){
+public class LevelScreen implements Screen {
+    public LevelScreen(TrashTumble game){
 
     }
 

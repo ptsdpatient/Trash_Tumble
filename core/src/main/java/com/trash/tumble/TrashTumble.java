@@ -29,7 +29,7 @@ public class TrashTumble extends Game {
     private StartMenu startMenu;
     private GameScreen gameScreen;
     private LevelEdit levelEdit;
-    private PauseScreen pauseScreen;
+    private LevelScreen levelScreen;
     public InputMultiplexer inputMultiplexer;
 
 
@@ -40,7 +40,7 @@ public class TrashTumble extends Game {
         startMenu=new StartMenu(this);
         gameScreen=new GameScreen(this);
         levelEdit=new LevelEdit(this);
-        pauseScreen=new PauseScreen(this);
+        levelScreen=new LevelScreen(this);
         setScreen(startMenu);
     }
 
@@ -50,8 +50,8 @@ public class TrashTumble extends Game {
     public void startEdit(){
         this.setScreen(levelEdit);
     }
-    public void pauseScreen(){
-        this.setScreen(pauseScreen);
+    public void setLevelScreen(){
+        this.setScreen(levelScreen);
     }
     public void setMenuScreen(){
         this.setScreen(startMenu);
