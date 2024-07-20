@@ -3,7 +3,12 @@ package com.trash.tumble;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -25,15 +30,31 @@ public class TrashTumble extends Game {
     private GameScreen gameScreen;
     private LevelEdit levelEdit;
     private PauseScreen pauseScreen;
+    public InputMultiplexer inputMultiplexer;
+
 
     @Override
     public void create() {
+        Gdx.graphics.setCursor( Gdx.graphics.newCursor(new Pixmap(Gdx.files.internal("cursor.png")), 0, 0));
         batch=new SpriteBatch();
         startMenu=new StartMenu(this);
         gameScreen=new GameScreen(this);
         levelEdit=new LevelEdit(this);
         pauseScreen=new PauseScreen(this);
         setScreen(startMenu);
+    }
+
+    public void startGame(){
+        this.setScreen(gameScreen);
+    }
+    public void startEdit(){
+        this.setScreen(levelEdit);
+    }
+    public void pauseScreen(){
+        this.setScreen(pauseScreen);
+    }
+    public void setMenuScreen(){
+        this.setScreen(startMenu);
     }
 
     @Override
@@ -44,4 +65,5 @@ public class TrashTumble extends Game {
     public void dispose(){
         batch.dispose();
     }
+
 }

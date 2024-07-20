@@ -5,6 +5,7 @@ import static com.trash.tumble.Methods.files;
 import static com.trash.tumble.Methods.print;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
@@ -15,12 +16,16 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.trash.tumble.Methods;
+
+import java.awt.Point;
+import java.awt.Rectangle;
 
 public class StartMenu implements Screen {
     private TrashTumble game;
@@ -32,6 +37,7 @@ public class StartMenu implements Screen {
     static int activeButtonIndex=4;
     Vector3 touch;
     Vector2 point;
+    ShapeRenderer shapeRenderer;
 
     TextureRegion[] buttonSheet;
 
@@ -43,24 +49,29 @@ public class StartMenu implements Screen {
 
     public static class Button{
         Sprite button;
+        Rectangle bounds;
+        boolean active=false;
         String name;
         int id;
-        float scale=1;
+        float scale=0.8f;
         public Button(TextureRegion tex, String name,int id){
             button=new Sprite(tex);
-            
+
             button.setX(1280/4f-button.getWidth()/2f);
             button.setY(720/4f-70-id*(button.getHeight()+3f));
-
             button.setScale(0.8f);
-
+           switch(id){
+               case 0:bounds=new Rectangle((int) button.getX()+100, (int) button.getY(),110,40);break;
+               case 1:bounds=new Rectangle((int) button.getX()+35, (int) button.getY(),240,40);break;
+               case 2:bounds=new Rectangle((int) button.getX()+100, (int) button.getY()+2,110,40);break;
+           }
             this.name=name;
             this.id=id;
         }
 
         public void render(SpriteBatch sb){
             button.draw(sb);
-            if(activeButtonIndex==id){
+            if(active){
                 if(scale<0.9f){
                     scale+=Gdx.graphics.getDeltaTime()*1.1f;
                 }
@@ -81,6 +92,7 @@ public class StartMenu implements Screen {
         font=new BitmapFont();
         background=new Texture(files("startScreenBG.png"));
         font=new BitmapFont(files("data.fnt"));
+        shapeRenderer=new ShapeRenderer();
 
         buttonSheet=extractSprite(files("startButtonSheet.png"),310,46);
 
@@ -98,6 +110,12 @@ public class StartMenu implements Screen {
         viewport=new ExtendViewport(1280/2f,720/2f,camera);
         viewport.apply();
 
+
+
+    }
+
+    @Override
+    public void show() {
 
         Gdx.input.setInputProcessor(new InputProcessor() {
             @Override
@@ -122,6 +140,18 @@ public class StartMenu implements Screen {
 
             @Override
             public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+                touch = new Vector3(screenX,screenY,0);
+                camera.unproject(touch);
+                point = new Vector2(touch.x,touch.y);
+                for(Button btn : buttonList){
+                    if(btn.button.getBoundingRectangle().contains(point)){
+                        switch(btn.id){
+                            case 0:game.startGame();break;
+                            case 1:game.startEdit();break;
+                            case 2:Gdx.app.exit();break;
+                        }
+                    }
+                }
                 return false;
             }
 
@@ -141,10 +171,7 @@ public class StartMenu implements Screen {
                 camera.unproject(touch);
                 point = new Vector2(touch.x,touch.y);
                 for(Button button : buttonList){
-                    if(button.button.getBoundingRectangle().contains(point)){
-                    activeButtonIndex=button.id;
-                    }
-
+                    button.active=button.bounds.contains(new Point((int) point.x, (int) point.y));
                 }
                 return false;
             }
@@ -154,11 +181,6 @@ public class StartMenu implements Screen {
                 return false;
             }
         });
-    }
-
-    @Override
-    public void show() {
-
     }
 
     @Override
@@ -178,6 +200,12 @@ public class StartMenu implements Screen {
     }
 
     batch.end();
+
+    shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+    for(Button btn : buttonList){
+        shapeRenderer.rect(btn.bounds.x,btn.bounds.y,btn.bounds.width,btn.bounds.height);
+    }
+    shapeRenderer.end();
     }
 
     @Override
@@ -197,8 +225,9 @@ public class StartMenu implements Screen {
 
     @Override
     public void hide() {
-
+        Gdx.input.setInputProcessor(null);
     }
+
 
     @Override
     public void dispose() {
