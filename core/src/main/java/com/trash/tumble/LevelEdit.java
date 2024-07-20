@@ -17,10 +17,12 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.SnapshotArray;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 import java.awt.Point;
+import java.awt.Rectangle;
 
 public class LevelEdit implements Screen {
     private TrashTumble game;
@@ -29,29 +31,38 @@ public class LevelEdit implements Screen {
     private SpriteBatch batch;
     private OrthographicCamera camera;
     private Viewport viewport;
-    private TextureRegion[] backgrounds=new TextureRegion[4];
+    private Texture[] backgrounds=new Texture[4];
     float worldWidth=1280/2f,worldHeight=780/2f;
-    Texture background;
-    TextureRegion[] editButtonSheet,uiBoxSheet,editObjectSheet,editPanelButtonSheet;
+
+    TextureRegion[] editButtonSheet,uiBoxSheet,editObjectSheet,editPanelButtonSheet,trashBagSheet,trashCanSheet,panelObjectSheet;
     String[] levelMenuButton={"close","done","toggle"};
     String[] editObjectName={"rotate","sizeUP","sizeDOWN","delete"};
+
     Array<EditMenuButton> levelMenuButtonList=new Array<>();
     Array<EditObjectButton> editObjectList=new Array<>();
     Array<EditPanelButton> editPanelButtons=new Array<>();
+    Array<PanelBackgroundButton> panelBackgroundButtons = new SnapshotArray<>();
+    Array<PanelTrashBagButton> panelTrashBagButtons = new Array<>();
+    Array<PanelTrashCanButton> panelTrashCanButtons = new Array<>();
+    Array<PanelTrashBag> panelTrashBags = new Array<>();
+    Array<PanelTrashCan> panelTrashCans = new Array<>();
+    Array<PanelObject> panelObjects= new Array<>();
+
+
     int currentBG=0,panelIndex=0;
     boolean showPanel=false;
 
     public LevelEdit(TrashTumble game){
         this.game=game;
         this.batch=game.batch;
-        background=new Texture(files("gameBG_1.png"));
+
+        for(int i =0;i<3;i++)backgrounds[i]=new Texture(files("gameBG_"+(i+1)+".png"));
+
         camera=new OrthographicCamera();
         camera.setToOrtho(false,1280/2f,720/2f);
         viewport=new ExtendViewport(1280/2f,720/2f,camera);
         viewport.apply();
-        for(int i=1;i<4;i++){
-            backgrounds[i-1]=new TextureRegion(new Texture(files("gameBG_"+i+".png")));
-        }
+
         editButtonSheet=extractSprite(files("edit_button_sheet.png"),64,64);
         int index=0;
         for(String name : levelMenuButton){
@@ -64,16 +75,226 @@ public class LevelEdit implements Screen {
             editObjectList.add(new EditObjectButton(editObjectSheet[index],name,index));
             index++;
         }
+
         editPanelButtonSheet=extractSprite(files("edit_panel_button_sheet.png"),64,64);
-        index=0;
+        trashBagSheet=extractSprite(files("trashbag_sheet.png"),128,128);
+        trashCanSheet=extractSprite(files("trashcan_sheet.png"),192,192);
+        panelObjectSheet=extractSprite(files("objects_sheet.png"),64,64);
+
+
         for(int i=0;i<3;i++){
-            editPanelButtons.add(new EditPanelButton(editPanelButtonSheet[index],index));
-            index++;
+            editPanelButtons.add(new EditPanelButton(editPanelButtonSheet[i],i));
+        }
+
+        for(int i=0;i<2;i++){
+            panelBackgroundButtons.add(new PanelBackgroundButton(editButtonSheet[3],i));
+            panelTrashBagButtons.add(new PanelTrashBagButton(editButtonSheet[3],i));
+            panelTrashCanButtons.add(new PanelTrashCanButton(editButtonSheet[3],i));
+        }
+
+        panelTrashBags.add(new PanelTrashBag(trashBagSheet[0],0,true));
+        panelTrashCans.add(new PanelTrashCan(trashCanSheet[0],0,true));
+
+        index=0;
+        for(int i =0;i<6;i++){
+            for(int j=0;j<3;j++){
+                if(index>16)break;
+                panelObjects.add(new PanelObject(panelObjectSheet[index],j*64,720/2f-100-(15+i*50),index,true));
+                index++;
+            }
         }
 
         uiBoxSheet=extractSprite(files("ui_box_sheet.png"),64,64);
 
 
+    }
+
+
+    public class PanelObject{
+        Sprite button;
+        Rectangle bounds;
+        boolean active=false,spawn=false;
+        float scale=0.6f;
+
+
+        public PanelObject(TextureRegion tex,float x,float y,int id,boolean spawn){
+
+            button=new Sprite(tex);
+            button.setPosition(x,y);
+            if(spawn){
+                switch(id){
+                    case 0 :{
+
+                    }break;
+                }
+            }
+            button.setScale(scale);
+        }
+        public void render(SpriteBatch sb){
+            sb.draw(uiBoxSheet[3],button.getX()+10,button.getY()+11,button.getWidth()/1.5f,button.getHeight()/1.5f);
+
+            button.draw(sb);
+
+
+            if(active){
+                if(scale<0.9f){
+                    scale+=Gdx.graphics.getDeltaTime()*1.1f;
+                }
+                button.setScale(scale);
+            }else{
+                if(scale>0.6f){
+                    scale-=Gdx.graphics.getDeltaTime();
+                    button.setScale(scale);
+                }
+            }
+        }
+    }
+
+
+    public class PanelTrashCan{
+        boolean spawn=false;
+        Sprite button;
+        boolean active=false;
+        float scale=0.8f;
+        int id;
+        public PanelTrashCan(TextureRegion tex,int id,boolean spawn){
+            button=new Sprite(tex);
+            button.setScale(0.4f);
+            button.setY(-40);
+            button.setX(15f);
+            this.spawn=spawn;
+            this.id=id;
+            if(id==1)button.flip(true,false);
+        }
+        public void render(SpriteBatch sb){
+            button.draw(sb);
+            if(active){
+                if(scale<0.9f){
+                    scale+=Gdx.graphics.getDeltaTime()*1.1f;
+                }
+                button.setScale(scale);
+            }else{
+                if(scale>0.8f){
+                    scale-=Gdx.graphics.getDeltaTime();
+                    button.setScale(scale);
+                }
+            }
+        }
+    }
+    public class PanelTrashBag{
+        boolean spawn=false;
+        Sprite button;
+        boolean active=false;
+        float scale=0.8f;
+        int id;
+        public PanelTrashBag(TextureRegion tex,int id,boolean spawn){
+            button=new Sprite(tex);
+            button.setScale(0.5f);
+            button.setY(90);
+            button.setX(46f);
+            this.spawn=spawn;
+            this.id=id;
+            if(id==1)button.flip(true,false);
+        }
+        public void render(SpriteBatch sb){
+            button.draw(sb);
+            if(active){
+                if(scale<0.9f){
+                    scale+=Gdx.graphics.getDeltaTime()*1.1f;
+                }
+                button.setScale(scale);
+            }else{
+                if(scale>0.8f){
+                    scale-=Gdx.graphics.getDeltaTime();
+                    button.setScale(scale);
+                }
+            }
+        }
+    }
+
+    public class PanelTrashBagButton{
+        Sprite button;
+        boolean active=false;
+        float scale=0.8f;
+        int id;
+        public PanelTrashBagButton(TextureRegion tex,int id){
+            button=new Sprite(tex);
+            button.setScale(0.8f);
+            button.setY(120);
+            button.setX(id*120+20);
+            this.id=id;
+            if(id==1)button.flip(true,false);
+        }
+        public void render(SpriteBatch sb){
+            button.draw(sb);
+            if(active){
+                if(scale<0.9f){
+                    scale+=Gdx.graphics.getDeltaTime()*1.1f;
+                }
+                button.setScale(scale);
+            }else{
+                if(scale>0.8f){
+                    scale-=Gdx.graphics.getDeltaTime();
+                    button.setScale(scale);
+                }
+            }
+        }
+    }
+    public class PanelTrashCanButton{
+        Sprite button;
+        boolean active=false;
+        float scale=0.8f;
+        int id;
+        public PanelTrashCanButton(TextureRegion tex,int id){
+            button=new Sprite(tex);
+            button.setScale(0.8f);
+            button.setY(30);
+            button.setX(id*120+20);
+            this.id=id;
+            if(id==1)button.flip(true,false);
+        }
+        public void render(SpriteBatch sb){
+            button.draw(sb);
+            if(active){
+                if(scale<0.9f){
+                    scale+=Gdx.graphics.getDeltaTime()*1.1f;
+                }
+                button.setScale(scale);
+            }else{
+                if(scale>0.8f){
+                    scale-=Gdx.graphics.getDeltaTime();
+                    button.setScale(scale);
+                }
+            }
+        }
+    }
+    public class PanelBackgroundButton{
+        Sprite button;
+        boolean active=false;
+        float scale=0.8f;
+        int id;
+        public PanelBackgroundButton(TextureRegion tex,int id){
+            button=new Sprite(tex);
+            button.setScale(0.8f);
+            button.setY(210);
+            button.setX(id*185-10);
+            this.id=id;
+            if(id==1)button.flip(true,false);
+        }
+        public void render(SpriteBatch sb){
+            button.draw(sb);
+            if(active){
+                if(scale<0.9f){
+                    scale+=Gdx.graphics.getDeltaTime()*1.1f;
+                }
+                button.setScale(scale);
+            }else{
+                if(scale>0.8f){
+                    scale-=Gdx.graphics.getDeltaTime();
+                    button.setScale(scale);
+                }
+            }
+        }
     }
 
     public class EditPanelButton{
@@ -244,6 +465,17 @@ public class LevelEdit implements Screen {
             for(EditPanelButton button : editPanelButtons){
                 button.active=button.button.getBoundingRectangle().contains(point);
             }
+            for(PanelBackgroundButton button : panelBackgroundButtons){
+                button.active=button.button.getBoundingRectangle().contains(point);
+            }
+            for(PanelTrashBagButton button : panelTrashBagButtons){
+                button.active=button.button.getBoundingRectangle().contains(point);
+            }
+            for(PanelTrashCanButton button : panelTrashCanButtons){
+                button.active=button.button.getBoundingRectangle().contains(point);
+            }
+
+
             return false;
         }
 
@@ -262,18 +494,38 @@ public class LevelEdit implements Screen {
         camera.update();
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
-        batch.draw(background,0,0,worldWidth,worldHeight);
+        batch.draw(backgrounds[currentBG],0,0,worldWidth,worldHeight);
 
         for(EditMenuButton button :levelMenuButtonList){
             button.render(batch);
         }
+
         for(EditObjectButton button : editObjectList){
             button.render(batch);
         }
+
         if(showPanel){
-            batch.draw(uiBoxSheet[5],0,0,200,720/2f);
+
             for(EditPanelButton buttons : editPanelButtons){
                 buttons.render(batch);
+            }
+
+            switch(panelIndex){
+                case 0:{
+                    batch.draw(backgrounds[currentBG],42,200,145,80);
+                    for(PanelBackgroundButton button : panelBackgroundButtons){
+                        button.render(batch);
+                    }
+                    for(PanelTrashBagButton button : panelTrashBagButtons)button.render(batch);
+                    for(PanelTrashCanButton button : panelTrashCanButtons)button.render(batch);
+                    for(PanelTrashBag button : panelTrashBags)button.render(batch);
+                    for(PanelTrashCan button : panelTrashCans)button.render(batch);
+                }break;
+                case 1:{
+                    for(PanelObject obj : panelObjects){
+                        obj.render(batch);
+                    }
+                }break;
             }
         }
 

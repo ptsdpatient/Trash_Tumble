@@ -201,11 +201,12 @@ public class StartMenu implements Screen {
 
     batch.end();
 
-    shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-    for(Button btn : buttonList){
-        shapeRenderer.rect(btn.bounds.x,btn.bounds.y,btn.bounds.width,btn.bounds.height);
-    }
-    shapeRenderer.end();
+//    shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+//    for(Button btn : buttonList){
+//        shapeRenderer.rect(btn.bounds.x,btn.bounds.y,btn.bounds.width,btn.bounds.height);
+//    }
+//    shapeRenderer.end();
+
     }
 
     @Override
