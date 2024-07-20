@@ -32,11 +32,13 @@ public class LevelEdit implements Screen {
     private TextureRegion[] backgrounds=new TextureRegion[4];
     float worldWidth=1280/2f,worldHeight=780/2f;
     Texture background;
-    TextureRegion[] editButtonSheet,uiBoxSheet,editObjectSheet;
+    TextureRegion[] editButtonSheet,uiBoxSheet,editObjectSheet,editPanelButtonSheet;
     String[] levelMenuButton={"close","done","toggle"};
     String[] editObjectName={"rotate","sizeUP","sizeDOWN","delete"};
     Array<EditMenuButton> levelMenuButtonList=new Array<>();
-    int currentBG=0;
+    Array<EditObjectButton> editObjectList=new Array<>();
+    Array<EditPanelButton> editPanelButtons=new Array<>();
+    int currentBG=0,panelIndex=0;
     boolean showPanel=false;
 
     public LevelEdit(TrashTumble game){
@@ -51,15 +53,55 @@ public class LevelEdit implements Screen {
             backgrounds[i-1]=new TextureRegion(new Texture(files("gameBG_"+i+".png")));
         }
         editButtonSheet=extractSprite(files("edit_button_sheet.png"),64,64);
-
         int index=0;
         for(String name : levelMenuButton){
             levelMenuButtonList.add(new EditMenuButton(editButtonSheet[index],name,index));
             index++;
         }
+        editObjectSheet=extractSprite(files("edit_item_sheet.png"),64,64);
+        index=0;
+        for(String name : editObjectName){
+            editObjectList.add(new EditObjectButton(editObjectSheet[index],name,index));
+            index++;
+        }
+        editPanelButtonSheet=extractSprite(files("edit_panel_button_sheet.png"),64,64);
+        index=0;
+        for(int i=0;i<3;i++){
+            editPanelButtons.add(new EditPanelButton(editPanelButtonSheet[index],index));
+            index++;
+        }
 
         uiBoxSheet=extractSprite(files("ui_box_sheet.png"),64,64);
 
+
+    }
+
+    public class EditPanelButton{
+        Sprite button;
+        boolean active=false;
+        float scale=0.8f;
+        int id;
+        public EditPanelButton(TextureRegion tex,int id){
+            button=new Sprite(tex);
+            button.setScale(0.8f);
+            button.setY(720/2f-button.getHeight());
+            button.setX(id*60);
+            this.id=id;
+        }
+        public void render(SpriteBatch sb){
+            button.draw(sb);
+            if(active){
+                if(scale<0.9f){
+                    scale+=Gdx.graphics.getDeltaTime()*1.1f;
+                }
+                button.setScale(scale);
+            }else{
+                if(scale>0.8f){
+                    scale-=Gdx.graphics.getDeltaTime();
+                    button.setScale(scale);
+                }
+            }
+        }
     }
 
     public class EditObjectButton{
@@ -71,19 +113,13 @@ public class LevelEdit implements Screen {
         public EditObjectButton(TextureRegion tex,String name,int id){
             button=new Sprite(tex);
             button.setScale(0.8f);
-            switch(id){
-                case 0: case 1: button.setPosition(1280/2f-(id+1)*button.getWidth(),720/2f- button.getHeight());break;
-                case 2:button.setPosition(0,720/4f-button.getHeight()/2f);break;
-            }
-
+            button.setY(720/2f-button.getHeight());
+            button.setX(220+id*70);
             this.name=name;
             this.id=id;
         }
         public void render(SpriteBatch sb){
             button.draw(sb);
-            if(id==2){
-                button.setFlip(showPanel,false);
-            }
             if(active){
                 if(scale<0.9f){
                     scale+=Gdx.graphics.getDeltaTime()*1.1f;
@@ -117,7 +153,7 @@ public class LevelEdit implements Screen {
         public void render(SpriteBatch sb){
             button.draw(sb);
             if(id==2){
-                button.setFlip(showPanel,false);
+                button.setFlip(!showPanel,false);
             }
             if(active){
                 if(scale<0.9f){
@@ -177,6 +213,10 @@ public class LevelEdit implements Screen {
                     }
                 }
             }
+
+            for(EditPanelButton btn : editPanelButtons){
+                if(btn.button.getBoundingRectangle().contains(point))panelIndex=btn.id;
+            }
             return false;
         }
 
@@ -196,6 +236,12 @@ public class LevelEdit implements Screen {
             camera.unproject(touch);
             point = new Vector2(touch.x,touch.y);
             for(EditMenuButton button : levelMenuButtonList){
+                button.active=button.button.getBoundingRectangle().contains(point);
+            }
+            for(EditObjectButton button : editObjectList){
+                button.active=button.button.getBoundingRectangle().contains(point);
+            }
+            for(EditPanelButton button : editPanelButtons){
                 button.active=button.button.getBoundingRectangle().contains(point);
             }
             return false;
@@ -221,9 +267,16 @@ public class LevelEdit implements Screen {
         for(EditMenuButton button :levelMenuButtonList){
             button.render(batch);
         }
-        if(showPanel){
-            batch.draw(uiBoxSheet[3],0,0,200,720/2f);
+        for(EditObjectButton button : editObjectList){
+            button.render(batch);
         }
+        if(showPanel){
+            batch.draw(uiBoxSheet[5],0,0,200,720/2f);
+            for(EditPanelButton buttons : editPanelButtons){
+                buttons.render(batch);
+            }
+        }
+
         batch.end();
     }
 
