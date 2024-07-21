@@ -16,11 +16,14 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+import com.badlogic.gdx.physics.box2d.CircleShape;
+import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
@@ -79,36 +82,375 @@ public class GameScreen implements Screen {
     public class ObjectInstance{
         Sprite object;
         int id;
+        float width=0,height=0,density=0,radius=0,friction=0,restitution=0;
+        float xDiff=0,yDiff=0,linearDamping=0,angularDamping=0;
+        private Body body;
+        boolean makeBox=true,makeCircle=false;
 
-        public ObjectInstance(TextureRegion tex,float x,float y,float rotation,int id,float size){
+        public ObjectInstance(TextureRegion tex,float x,float y,float rotation,float size,int id){
             object=new Sprite(tex);
             object.setPosition(x,y);
             object.setScale(size);
             object.setRotation(rotation);
             this.id=id;
+            switch(id){
+                case 0:{
+                    width=7;
+                    height=object.getHeight();
+                    density=2000;
+                    friction=10;
+                    restitution=0.7f;
+                }break;
+                case 1:{
+                    width=14;
+                    height=object.getHeight()/1.4f;
+                    xDiff=3;
+                    density=2000;
+                    friction=10;
+                    restitution=0.7f;
+                }break;
+                case 2:{
+                    makeBox=false;
+                    makeCircle=true;
+                    radius = (object.getWidth() * object.getScaleX()) / 2;
+                    density=30;
+                    friction=10;
+                    restitution=0.8f;
+                }break;
+                case 3:{
+                    width=16;
+                    height=object.getHeight()/1.2f;
+                    density=2000;
+                    friction=10;
+                    restitution=0.7f;
+                }break;
+                case 4:{
+                    width=28;
+                    xDiff=-2;
+                    height=object.getHeight()/1.2f;
+                    density=200;
+                    friction=10;
+                    restitution=0.4f;
+                }break;
+                case 5:{
+                    width=object.getWidth()/1.2f;
+                    xDiff=-2;
+                    yDiff=2;
+                    height=object.getHeight()/1.7f;
+                    density=200;
+                    friction=10;
+                    restitution=0.4f;
+                }break;
+                case 6:{
+                    width=15;
+                    xDiff=0;
+                    height=object.getHeight()/1.15f;
+                    density=20;
+                    friction=0;
+                    restitution=0.4f;
+                }break;
+                case 7:{
+                    width=30;
+                    xDiff=0;
+                    yDiff=2;
+                    height=object.getHeight()/1.55f;
+                    density=20;
+                    friction=0;
+                    restitution=0.4f;
+                }break;
+                case 8:{
+                    width=30;
+                    xDiff=0;
+                    yDiff=0;
+                    height=object.getHeight()/1.1f;
+                    density=4000;
+                    friction=40;
+                    restitution=0.2f;
+                }break;
+                case 9:{
+                    width=object.getWidth();
+                    xDiff=0;
+                    yDiff=0;
+                    height=object.getHeight()/1.5f;
+                    density=4000;
+                    friction=40;
+                    restitution=0.3f;
+                }break;
+                case 10:{
+                    width=40;
+                    xDiff=0;
+                    yDiff=15;
+                    height=object.getHeight()/1.6f;
+                    density=4000;
+                    friction=40;
+                    restitution=0.3f;
+                }break;
+                case 11:{
+                    width=26;
+                    xDiff=0;
+                    yDiff=13;
+                    height=object.getHeight()/1.4f;
+                    density=4000;
+                    friction=40;
+                    restitution=0.3f;
+                }break;
+                case 12:{
+                    width=object.getWidth()/1.35f;
+                    xDiff=0;
+                    yDiff=0;
+                    height=object.getHeight()/1.4f;
+                    density=4000;
+                    friction=40;
+                    restitution=0.3f;
+                }break;
+                case 13:{
+                    linearDamping=0.5f;
+                    angularDamping=0.5f;
+                    makeCircle=true;
+                    makeBox=false;
+                    radius = (object.getWidth()/2f * object.getScaleX()) / 2;
+                    xDiff=0;
+                    yDiff=24;
+                    density=4000;
+                    friction=40;
+                    restitution=0.3f;
+                }break;
+                case 14:{
+                    width=object.getWidth()/1.35f;
+                    xDiff=0;
+                    yDiff=0;
+                    height=object.getHeight()/1.4f;
+                    density=4000;
+                    friction=40;
+                    restitution=0.4f;
+                }break;
+                case 15:{
+                    width=object.getWidth()/1.35f;
+                    xDiff=0;
+                    yDiff=0;
+                    height=object.getHeight()/1.1f;
+                    density=4000;
+                    friction=40;
+                    restitution=0.3f;
+                }break;
+                case 16:{
+                    width=object.getWidth()/1.35f;
+                    xDiff=0;
+                    yDiff=40;
+                    height=object.getHeight()/3f;
+                    density=4000;
+                    friction=40;
+                    restitution=0.3f;
+                }break;
+            }
+            if(makeBox)createBox(x, y,width,height,density,friction,restitution, size, world);
+            if(makeCircle) createCircle(x, y,radius,size,density,friction,restitution, world);
         }
+
+        private void createCircle(float x, float y,float radius,float size,float density,float friction,float restitution,World world){
+            BodyDef bodyDef = new BodyDef();
+            bodyDef.type = BodyDef.BodyType.DynamicBody;
+            bodyDef.position.set(x, y);
+            body = world.createBody(bodyDef);
+            CircleShape circleShape = new CircleShape();
+            circleShape.setRadius(radius);
+            body.setTransform(new Vector2(x, y), object.getRotation()* MathUtils.degreesToRadians);
+
+            FixtureDef fixtureDef = new FixtureDef();
+            fixtureDef.shape = circleShape;
+            fixtureDef.density = density;
+            fixtureDef.friction = friction;
+            fixtureDef.restitution = restitution;
+            body.createFixture(fixtureDef);
+            circleShape.dispose();
+            body.setLinearDamping(linearDamping);
+            body.setAngularDamping(angularDamping);
+        }
+
+        private void createBox(float x, float y,float width,float height,float density,float friction,float restitution, float size, World world) {
+            BodyDef bodyDef = new BodyDef();
+            bodyDef.type = BodyDef.BodyType.DynamicBody;
+            bodyDef.position.set(x, y);
+            bodyDef.angle = (float) Math.toRadians(object.getRotation());
+
+            body = world.createBody(bodyDef);
+            body.setTransform(new Vector2(x, y), object.getRotation()* MathUtils.degreesToRadians);
+
+            PolygonShape shape = new PolygonShape();
+            shape.setAsBox(width / 2f * object.getScaleX(), height / 2f * object.getScaleY());
+
+            FixtureDef fixtureDef = new FixtureDef();
+            fixtureDef.shape = shape;
+            fixtureDef.density = density;
+            fixtureDef.friction = friction;
+            fixtureDef.restitution = restitution;
+
+            body.createFixture(fixtureDef);
+
+            shape.dispose();
+            body.setLinearDamping(linearDamping);
+            body.setAngularDamping(angularDamping);
+
+        }
+
         public void render(SpriteBatch sb){
+            object.setPosition(body.getPosition().x+xDiff - object.getWidth() / 2, body.getPosition().y+yDiff - object.getHeight() / 2);
+            object.setRotation((float) Math.toDegrees(body.getAngle()));
             object.draw(sb);
         }
     }
     public class SpecialInstance{
         Sprite object;
         int id;
+        float width=0,height=0,density=0,radius=0,friction=0,restitution=0;
+        float xDiff=0,yDiff=0,linearDamping=0,angularDamping=0;
+        private Body body;
+        boolean makeBox=true,makeCircle=false;
 
-        public SpecialInstance(TextureRegion tex,float x,float y,float rotation,int id,float size){
+        public SpecialInstance(TextureRegion tex,float x,float y,float rotation,float size,int id){
             object=new Sprite(tex);
             object.setPosition(x,y);
             object.setScale(size);
             object.setRotation(rotation);
             this.id=id;
+            switch(id){
+                case 0:{
+                    width=58;
+                    yDiff=6;
+                    height=object.getHeight()/1.2f;
+                    density=2000;
+                    friction=10;
+                    restitution=0.7f;
+                }break;
+                case 1:{
+                    width=58;
+                    yDiff=6;
+                    height=object.getHeight()/1.2f;
+                    density=2000;
+                    friction=10;
+                    restitution=0.7f;
+                }break;
+                case 2:{
+                    width=52;
+                    yDiff=6;
+                    height=object.getHeight()/1.5f;
+                    density=2000;
+                    friction=10;
+                    restitution=0.4f;
+                }break;
+                case 3:{
+                    width=52;
+                    yDiff=6;
+                    height=object.getHeight()/1.5f;
+                    density=2000;
+                    friction=10;
+                    restitution=0.4f;
+                }break;
+                case 4:{
+                    width=52;
+                    yDiff=6;
+                    height=object.getHeight()/1.5f;
+                    density=2000;
+                    friction=10;
+                    restitution=0.4f;
+                }break;
+                case 5:{
+                    width=52;
+                    yDiff=25;
+                    height=object.getHeight()/3f;
+                    density=2000;
+                    friction=10;
+                    restitution=0.4f;
+                }break;
+                case 6:{
+                    width=52;
+                    yDiff=25;
+                    height=object.getHeight()/3f;
+                    density=2000;
+                    friction=10;
+                    restitution=0.4f;
+                }break;
+                case 7:{
+                    width=52;
+                    yDiff=25;
+                    height=object.getHeight()/3f;
+                    density=2000;
+                    friction=10;
+                    restitution=0.4f;
+                }break;
+                case 8:{
+                    width=38;
+                    yDiff=10;
+                    height=50;
+                    density=2000;
+                    friction=10;
+                    restitution=0.4f;
+                }break;
+
+            }
+            if(makeBox)createBox(x, y,width,height,density,friction,restitution, size, world);
+            if(makeCircle) createCircle(x, y,radius,size,density,friction,restitution, world);
+
         }
+
+        private void createCircle(float x, float y,float radius,float size,float density,float friction,float restitution,World world){
+            BodyDef bodyDef = new BodyDef();
+            bodyDef.type = BodyDef.BodyType.DynamicBody;
+            bodyDef.position.set(x, y);
+            body = world.createBody(bodyDef);
+            body.setTransform(new Vector2(x, y), object.getRotation()* MathUtils.degreesToRadians);
+
+
+            CircleShape circleShape = new CircleShape();
+            circleShape.setRadius(radius);
+            FixtureDef fixtureDef = new FixtureDef();
+            fixtureDef.shape = circleShape;
+            fixtureDef.density = density;
+            fixtureDef.friction = friction;
+            fixtureDef.restitution = restitution;
+            body.createFixture(fixtureDef);
+            circleShape.dispose();
+            body.setLinearDamping(linearDamping);
+            body.setAngularDamping(angularDamping);
+        }
+
+        private void createBox(float x, float y,float width,float height,float density,float friction,float restitution, float size, World world) {
+            BodyDef bodyDef = new BodyDef();
+            bodyDef.type = BodyDef.BodyType.DynamicBody;
+            bodyDef.position.set(x, y);
+            bodyDef.angle = (float) Math.toRadians(object.getRotation());
+            body = world.createBody(bodyDef);
+            body.setTransform(new Vector2(x, y), object.getRotation()* MathUtils.degreesToRadians);
+
+
+            PolygonShape shape = new PolygonShape();
+            shape.setAsBox(width / 2f * object.getScaleX(), height / 2f * object.getScaleY());
+            FixtureDef fixtureDef = new FixtureDef();
+            fixtureDef.shape = shape;
+            fixtureDef.density = density;
+            fixtureDef.friction = friction;
+            fixtureDef.restitution = restitution;
+            body.createFixture(fixtureDef);
+            shape.dispose();
+            body.setLinearDamping(linearDamping);
+            body.setAngularDamping(angularDamping);
+        }
+
         public void render(SpriteBatch sb){
+            object.setPosition(body.getPosition().x+xDiff - object.getWidth() / 2, body.getPosition().y+yDiff - object.getHeight() / 2);
+            object.setRotation((float) Math.toDegrees(body.getAngle()));
             object.draw(sb);
         }
+
+
     }
     public class TrashBagInstance{
         Sprite object;
         int id;
+        float width=0,height=0,density=0,radius=0,friction=0,restitution=0;
+        float xDiff=0,yDiff=0,linearDamping=0,angularDamping=0;
+        private Body body;
+        boolean makeBox=true,makeCircle=false;
 
         public TrashBagInstance(TextureRegion tex,float x,float y,float rotation,int id,float size){
             object=new Sprite(tex);
@@ -116,14 +458,100 @@ public class GameScreen implements Screen {
             object.setScale(size);
             object.setRotation(rotation);
             this.id=id;
+            switch(id) {
+                case 0:{
+                    makeBox=false;
+                    makeCircle=true;
+                    radius = (object.getWidth() * object.getScaleX()) / 2;
+                    density=30;
+                    friction=30;
+                    restitution=0.3f;
+                }break;
+                case 1:{
+                    makeBox=false;
+                    makeCircle=true;
+                    radius = (object.getWidth() * object.getScaleX()) / 2;
+                    density=30;
+                    friction=30;
+                    restitution=0.3f;
+                }break;
+                case 2:{
+                    makeBox=false;
+                    makeCircle=true;
+                    radius = (object.getWidth() * object.getScaleX()) / 2;
+                    density=30;
+                    friction=30;
+                    restitution=0.3f;
+                }break;
+                case 3:{
+                    makeBox=false;
+                    makeCircle=true;
+                    radius = (object.getWidth() * object.getScaleX()) / 2;
+                    density=30;
+                    friction=30;
+                    restitution=0.3f;
+                }break;
+
+            }
+            if(makeBox)createBox(x, y,width,height,density,friction,restitution, size, world);
+            if(makeCircle) createCircle(x, y,radius,size,density,friction,restitution, world);
+
+        }
+        private void createCircle(float x, float y,float radius,float size,float density,float friction,float restitution,World world){
+            BodyDef bodyDef = new BodyDef();
+            bodyDef.type = BodyDef.BodyType.DynamicBody;
+            bodyDef.position.set(x, y);
+            body = world.createBody(bodyDef);
+            body.setTransform(new Vector2(x, y), object.getRotation()* MathUtils.degreesToRadians);
+
+            CircleShape circleShape = new CircleShape();
+            circleShape.setRadius(radius);
+            FixtureDef fixtureDef = new FixtureDef();
+            fixtureDef.shape = circleShape;
+            fixtureDef.density = density;
+            fixtureDef.friction = friction;
+            fixtureDef.restitution = restitution;
+            body.createFixture(fixtureDef);
+            circleShape.dispose();
+            body.setLinearDamping(linearDamping);
+            body.setAngularDamping(angularDamping);
+        }
+
+        private void createBox(float x, float y,float width,float height,float density,float friction,float restitution, float size, World world) {
+            BodyDef bodyDef = new BodyDef();
+            bodyDef.type = BodyDef.BodyType.DynamicBody;
+            bodyDef.position.set(x, y);
+            bodyDef.angle = (float) Math.toRadians(object.getRotation());
+            body = world.createBody(bodyDef);
+            body.setTransform(new Vector2(x, y), object.getRotation()* MathUtils.degreesToRadians);
+
+            PolygonShape shape = new PolygonShape();
+            shape.setAsBox(width / 2f * object.getScaleX(), height / 2f * object.getScaleY());
+            FixtureDef fixtureDef = new FixtureDef();
+            fixtureDef.shape = shape;
+            fixtureDef.density = density;
+            fixtureDef.friction = friction;
+            fixtureDef.restitution = restitution;
+            body.createFixture(fixtureDef);
+            shape.dispose();
+            body.setLinearDamping(linearDamping);
+            body.setAngularDamping(angularDamping);
         }
         public void render(SpriteBatch sb){
+            object.setPosition(body.getPosition().x+xDiff - object.getWidth() / 2, body.getPosition().y+yDiff - object.getHeight() / 2);
+            object.setRotation((float) Math.toDegrees(body.getAngle()));
+
             object.draw(sb);
+
         }
     }
     public class TrashCanInstance{
         Sprite object;
         int id;
+        float width=0,height=0,density=0,radius=0,friction=0,restitution=0;
+        float xDiff=0,yDiff=0,linearDamping=0,angularDamping=0;
+        private Body body;
+        boolean makeBox=true,makeCircle=false;
 
         public TrashCanInstance(TextureRegion tex,float x,float y,float rotation,int id,float size){
             object=new Sprite(tex);
@@ -131,9 +559,67 @@ public class GameScreen implements Screen {
             object.setScale(size);
             object.setRotation(rotation);
             this.id=id;
+            switch(id) {
+                case 0:{
+                    width=object.getWidth()/1.5f;
+                    height=object.getHeight()/1.1f;
+                    density=30;
+                    friction=30;
+                    restitution=0.3f;
+                }break;
+
+
+            }
+            if(makeBox)createBox(x, y,width,height,density,friction,restitution, size, world);
+            if(makeCircle) createCircle(x, y,radius,size,density,friction,restitution, world);
+
+        }
+        private void createCircle(float x, float y,float radius,float size,float density,float friction,float restitution,World world){
+            BodyDef bodyDef = new BodyDef();
+            bodyDef.type = BodyDef.BodyType.DynamicBody;
+            bodyDef.position.set(x, y);
+            body = world.createBody(bodyDef);
+            body.setTransform(new Vector2(x, y), object.getRotation()* MathUtils.degreesToRadians);
+
+            CircleShape circleShape = new CircleShape();
+            circleShape.setRadius(radius);
+            FixtureDef fixtureDef = new FixtureDef();
+            fixtureDef.shape = circleShape;
+            fixtureDef.density = density;
+            fixtureDef.friction = friction;
+            fixtureDef.restitution = restitution;
+            body.createFixture(fixtureDef);
+            circleShape.dispose();
+            body.setLinearDamping(linearDamping);
+            body.setAngularDamping(angularDamping);
+        }
+
+        private void createBox(float x, float y,float width,float height,float density,float friction,float restitution, float size, World world) {
+            BodyDef bodyDef = new BodyDef();
+            bodyDef.type = BodyDef.BodyType.DynamicBody;
+            bodyDef.position.set(x, y);
+            bodyDef.angle = (float) Math.toRadians(object.getRotation());
+            body = world.createBody(bodyDef);
+            body.setTransform(new Vector2(x, y), object.getRotation()* MathUtils.degreesToRadians);
+
+            PolygonShape shape = new PolygonShape();
+            shape.setAsBox(width / 2f * object.getScaleX(), height / 2f * object.getScaleY());
+            FixtureDef fixtureDef = new FixtureDef();
+            fixtureDef.shape = shape;
+            fixtureDef.density = density;
+            fixtureDef.friction = friction;
+            fixtureDef.restitution = restitution;
+            body.createFixture(fixtureDef);
+            shape.dispose();
+            body.setLinearDamping(linearDamping);
+            body.setAngularDamping(angularDamping);
         }
         public void render(SpriteBatch sb){
+            object.setPosition(body.getPosition().x+xDiff - object.getWidth() / 2, body.getPosition().y+yDiff - object.getHeight() / 2);
+            object.setRotation((float) Math.toDegrees(body.getAngle()));
+
             object.draw(sb);
+
         }
     }
 
@@ -176,7 +662,7 @@ public class GameScreen implements Screen {
         camera.setToOrtho(false,1280/2f,720/2f);
         viewport=new ExtendViewport(1280/2f,720/2f,camera);
         viewport.apply();
-        world = new World(new Vector2(0, -9.8f), true);
+        world = new World(new Vector2(0, -9.8f*5), true);
         debugRenderer = new Box2DDebugRenderer();
 
         BodyDef groundBodyDef = new BodyDef();
@@ -191,8 +677,8 @@ public class GameScreen implements Screen {
         gameButtonSheet=extractSprite(files("game_button_sheet.png"),64,64);
         objectSheet=extractSprite(files("objects_sheet.png"),64,64);
         specialSheet=extractSprite(files("special_object_sheet.png"),64,64);
-        trashCanSheet=extractSprite(files("trashbag_sheet.png"),128,128);
-        trashBagSheet=extractSprite(files("trashcan_sheet.png"),192,192);
+        trashCanSheet=extractSprite(files("trashcan_sheet.png"),192,192);
+        trashBagSheet=extractSprite(files("trashbag_sheet.png"),128,128);
 
         int index=0;
         for(String name : gameButtonNames){
@@ -205,8 +691,7 @@ public class GameScreen implements Screen {
             backgrounds[i-1]=new TextureRegion(new Texture(files("gameBG_"+i+".png")));
         }
 
-        gameMap.add(new GameMap(0,1,50,60,0,1));
-
+        gameMap.add(new GameMap(0,1,300,220,0,0.5f));
         initializeWorld();
     }
 
@@ -214,10 +699,16 @@ public class GameScreen implements Screen {
         for(GameMap map : gameMap){
             switch(map.type){
                 case 0:{
-
+                    trashBagInstances.add(new TrashBagInstance(trashBagSheet[map.id],map.x,map.y,map.rotation,map.id,map.scale));
                 }break;
                 case 1:{
-
+                    trashCanInstances.add(new TrashCanInstance(trashCanSheet[map.id],map.x,map.y,map.rotation,map.id,map.scale));
+                }break;
+                case 2:{
+                    objectInstances.add(new ObjectInstance(objectSheet[map.id],map.x,map.y,map.rotation,map.scale,map.id));
+                }break;
+                case 3:{
+                    specialInstances.add(new SpecialInstance(specialSheet[map.id],map.x,map.y,map.rotation,map.scale,map.id));
                 }break;
             }
         }
