@@ -27,12 +27,15 @@ import java.awt.Rectangle;
 public class LevelEdit implements Screen {
     private TrashTumble game;
     Vector3 touch;
+    static Vector3 dragCoordinates;
     Vector2 point;
     private SpriteBatch batch;
-    private OrthographicCamera camera;
+    private static OrthographicCamera camera;
     private Viewport viewport;
     private Texture[] backgrounds=new Texture[4];
     float worldWidth=1280/2f,worldHeight=780/2f;
+
+    static Sprite draggable;
 
     TextureRegion[] editButtonSheet,uiBoxSheet,editObjectSheet,editPanelButtonSheet,trashBagSheet,trashCanSheet,panelObjectSheet,specialObjectSheet;
     String[] levelMenuButton={"close","done","toggle"};
@@ -50,8 +53,12 @@ public class LevelEdit implements Screen {
     Array<SpecialObject> specialObjects= new Array<>();
 
 
-    int currentBG=0,panelIndex=0;
+    int currentBG=0;
+    int panelIndex=0;
+    static int dragId=0;
+    static int dragType=0;
     boolean showPanel=false;
+    static boolean dragging=false;
 
     public LevelEdit(TrashTumble game){
         this.game=game;
@@ -76,6 +83,8 @@ public class LevelEdit implements Screen {
             editObjectList.add(new EditObjectButton(editObjectSheet[index],name,index));
             index++;
         }
+
+        draggable=new Sprite();
 
         editPanelButtonSheet=extractSprite(files("edit_panel_button_sheet.png"),64,64);
         trashBagSheet=extractSprite(files("trashbag_sheet.png"),128,128);
@@ -115,17 +124,17 @@ public class LevelEdit implements Screen {
 
         uiBoxSheet=extractSprite(files("ui_box_sheet.png"),64,64);
 
-
     }
 
     public class SpecialObject{
         Sprite button;
         Rectangle bounds;
+        int id=0;
         boolean active=false,spawn=false;
         float scale=0.65f;
 
         public SpecialObject(TextureRegion tex,float x,float y,int id,boolean spawn){
-
+            this.id=id;
             button=new Sprite(tex);
             button.setPosition(x,y);
             if(spawn){
@@ -159,12 +168,12 @@ public class LevelEdit implements Screen {
     public class PanelObject{
         Sprite button;
         Rectangle bounds;
+        int id;
         boolean active=false,spawn=false;
         float scale=0.65f;
 
-
         public PanelObject(TextureRegion tex,float x,float y,int id,boolean spawn){
-
+            this.id=id;
             button=new Sprite(tex);
             button.setPosition(x,y);
             if(spawn){
@@ -178,9 +187,7 @@ public class LevelEdit implements Screen {
         }
         public void render(SpriteBatch sb){
             sb.draw(uiBoxSheet[3],button.getX()+10,button.getY()+11,button.getWidth()/1.5f,button.getHeight()/1.5f);
-
             button.draw(sb);
-
 
             if(active){
                 if(scale<0.75f){
@@ -201,11 +208,11 @@ public class LevelEdit implements Screen {
         boolean spawn=false;
         Sprite button;
         boolean active=false;
-        float scale=0.8f;
+        float scale=0.4f;
         int id;
         public PanelTrashCan(TextureRegion tex,int id,boolean spawn){
             button=new Sprite(tex);
-            button.setScale(0.4f);
+            button.setScale(scale);
             button.setY(-40);
             button.setX(15f);
             this.spawn=spawn;
@@ -215,12 +222,12 @@ public class LevelEdit implements Screen {
         public void render(SpriteBatch sb){
             button.draw(sb);
             if(active){
-                if(scale<0.9f){
+                if(scale<0.5f){
                     scale+=Gdx.graphics.getDeltaTime()*1.1f;
                 }
                 button.setScale(scale);
             }else{
-                if(scale>0.8f){
+                if(scale>0.4f){
                     scale-=Gdx.graphics.getDeltaTime();
                     button.setScale(scale);
                 }
@@ -231,11 +238,11 @@ public class LevelEdit implements Screen {
         boolean spawn=false;
         Sprite button;
         boolean active=false;
-        float scale=0.8f;
+        float scale=0.5f;
         int id;
         public PanelTrashBag(TextureRegion tex,int id,boolean spawn){
             button=new Sprite(tex);
-            button.setScale(0.5f);
+            button.setScale(scale);
             button.setY(90);
             button.setX(46f);
             this.spawn=spawn;
@@ -245,12 +252,12 @@ public class LevelEdit implements Screen {
         public void render(SpriteBatch sb){
             button.draw(sb);
             if(active){
-                if(scale<0.9f){
+                if(scale<0.6f){
                     scale+=Gdx.graphics.getDeltaTime()*1.1f;
                 }
                 button.setScale(scale);
             }else{
-                if(scale>0.8f){
+                if(scale>0.5f){
                     scale-=Gdx.graphics.getDeltaTime();
                     button.setScale(scale);
                 }
@@ -457,6 +464,40 @@ public class LevelEdit implements Screen {
 
         @Override
         public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+            touch = new Vector3(screenX,screenY,0);
+            camera.unproject(touch);
+            point = new Vector2(touch.x,touch.y);
+
+            if(showPanel){
+                switch(panelIndex){
+                    case 0:{
+                        for(PanelTrashBag bag : panelTrashBags){
+                            if(bag.button.getBoundingRectangle().contains(point)){
+                                initializeDrag(bag.button,bag.id,0,bag.scale);
+                            }
+                        }
+                        for(PanelTrashCan can : panelTrashCans){
+                            if(can.button.getBoundingRectangle().contains(point)){
+                                initializeDrag(can.button,can.id,0,can.scale);
+                            }
+                        }
+                    }break;
+                    case 1:{
+                        for(PanelObject object : panelObjects){
+                            if(object.button.getBoundingRectangle().contains(point)){
+                                initializeDrag(object.button,object.id,1,object.scale);
+                            }
+                        }
+                    }break;
+                    case 2:{
+                        for(SpecialObject object : specialObjects){
+                            if(object.button.getBoundingRectangle().contains(point)){
+                                initializeDrag(object.button,object.id,2,object.scale);
+                            }
+                        }
+                    }break;
+                }
+            }
             return false;
         }
 
@@ -465,6 +506,9 @@ public class LevelEdit implements Screen {
             touch = new Vector3(screenX,screenY,0);
             camera.unproject(touch);
             point = new Vector2(touch.x,touch.y);
+
+            if(dragging)dragging=false;
+
             for(EditMenuButton btn : levelMenuButtonList){
                 if(btn.button.getBoundingRectangle().contains(point)){
                     switch(btn.id) {
@@ -481,9 +525,51 @@ public class LevelEdit implements Screen {
                 }
             }
 
-            for(EditPanelButton btn : editPanelButtons){
-                if(btn.button.getBoundingRectangle().contains(point))panelIndex=btn.id;
+            if(showPanel){
+                for(EditPanelButton btn : editPanelButtons){
+                    if(btn.button.getBoundingRectangle().contains(point))panelIndex=btn.id;
+                }
+
+                switch(panelIndex){
+                    case 0:{
+                        for(PanelBackgroundButton btn : panelBackgroundButtons){
+                            if(btn.button.getBoundingRectangle().contains(point)){
+                                currentBG+=btn.button.isFlipX()?1:-1;
+                                if(currentBG>2)currentBG=2;
+                                if(currentBG<0)currentBG=0;
+                            }
+                        }
+
+                        for(PanelTrashBagButton btn : panelTrashBagButtons){
+                            if(btn.button.getBoundingRectangle().contains(point)){
+                                for(PanelTrashBag bag : panelTrashBags){
+                                    bag.id+=btn.button.isFlipX()?1:-1;
+                                    if(bag.id<0)bag.id=0;
+                                    if(bag.id>trashBagSheet.length-1)bag.id=trashBagSheet.length-1;
+                                    bag.button.setRegion(trashBagSheet[bag.id]);
+                                }
+                            }
+                        }
+
+                        for(PanelTrashCanButton btn : panelTrashCanButtons){
+                            if(btn.button.getBoundingRectangle().contains(point)){
+                                for(PanelTrashCan can : panelTrashCans){
+                                    can.id+=btn.button.isFlipX()?1:-1;
+                                    if(can.id<0)can.id=0;
+                                    if(can.id>trashCanSheet.length-1)can.id=trashCanSheet.length-1;
+                                    can.button.setRegion(trashCanSheet[can.id]);
+                                }
+                            }
+                        }
+                    }break;
+                    case 1:{
+
+                    }break;
+                }
             }
+
+
+
             return false;
         }
 
@@ -494,6 +580,13 @@ public class LevelEdit implements Screen {
 
         @Override
         public boolean touchDragged(int screenX, int screenY, int pointer) {
+            touch = new Vector3(screenX,screenY,0);
+            camera.unproject(touch);
+            point = new Vector2(touch.x,touch.y);
+
+            if(dragging){
+                draggable.setPosition(touch.x-draggable.getWidth()/2f,touch.y-draggable.getHeight()/2f);
+            }
             return false;
         }
 
@@ -556,6 +649,8 @@ public class LevelEdit implements Screen {
             button.render(batch);
         }
 
+
+
         if(showPanel){
 
             for(EditPanelButton buttons : editPanelButtons){
@@ -586,12 +681,30 @@ public class LevelEdit implements Screen {
             }
         }
 
+        if(dragging){
+            draggable.draw(batch);
+        }
+
         batch.end();
     }
 
     @Override
     public void resize(int width, int height) {
         viewport.update(width,height,true);
+    }
+
+    public static void initializeDrag(TextureRegion tex,int id,int type,float scale){
+        dragging=true;
+        dragId=id;
+        dragType=type;
+
+        draggable=new Sprite(tex);
+        draggable.setScale(scale+(type==0?0.2f:0.8f));
+
+        print(scale+" : "+draggable.getScaleX());
+        dragCoordinates = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+        camera.unproject(dragCoordinates);
+        draggable.setPosition(dragCoordinates.x- draggable.getWidth()/2f, dragCoordinates.y-draggable.getHeight()/2f);
     }
 
     @Override
