@@ -40,7 +40,8 @@ public class TrashTumble extends Game {
         gameScreen=new GameScreen(this);
         levelEdit=new LevelEdit(this);
         levelScreen=new LevelScreen(this);
-        setScreen(startMenu);
+        setScreen(gameScreen);
+//        setScreen(startMenu);
     }
 
     public void startGame(String gameMap,int currentBG){
