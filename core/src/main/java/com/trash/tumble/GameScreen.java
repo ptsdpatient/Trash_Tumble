@@ -12,6 +12,9 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
@@ -30,9 +33,12 @@ public class GameScreen implements Screen {
     private static OrthographicCamera camera;
     private Viewport viewport;
     Array<GameMap> gameMap = new Array<>();
+    private World world;
+    private Box2DDebugRenderer debugRenderer;
+    boolean gameRun=false;
 
     public void setBG(int currentBG) {
-        
+
     }
 
     public static class GameMap{
@@ -58,7 +64,7 @@ public class GameScreen implements Screen {
         camera.setToOrtho(false,1280/2f,720/2f);
         viewport=new ExtendViewport(1280/2f,720/2f,camera);
         viewport.apply();
-
+        world = new World(new Vector2(0, -9.8f), true);
     }
 
 
@@ -78,7 +84,9 @@ public class GameScreen implements Screen {
         camera.update();
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
-
+        if(gameRun){
+            world.step(Gdx.graphics.getDeltaTime(), 6, 2);
+        }
 
         batch.end();
     }
