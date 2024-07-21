@@ -867,6 +867,7 @@ public class LevelEdit implements Screen {
 
     @Override
     public void dispose() {
+        batch.dispose();
 
     }
 }

@@ -1,18 +1,23 @@
 package com.trash.tumble;
 
+import static com.trash.tumble.Methods.extractSprite;
+import static com.trash.tumble.Methods.files;
 import static com.trash.tumble.Methods.print;
 
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
@@ -36,9 +41,16 @@ public class GameScreen implements Screen {
     private World world;
     private Box2DDebugRenderer debugRenderer;
     boolean gameRun=false;
+    float simulationSpeed=1;
+    int gameBG=0;
+    Vector3 touch;
+    Vector2 point;
+    TextureRegion[] gameButtonSheet,backgrounds;
+    Array<GameButton> gameButtonList = new Array<>();
+    String[] gameButtonNames={"slow","fast","restart","pause","play","levels","home","next"};
 
     public void setBG(int currentBG) {
-
+        gameBG=currentBG;
     }
 
     public static class GameMap{
@@ -55,6 +67,36 @@ public class GameScreen implements Screen {
         }
     }
 
+    public class GameButton{
+        Sprite button;
+        String name;
+        int id;
+        boolean active=false;
+        float scale=0.6f;
+        public GameButton(TextureRegion tex,String name,int id){
+            button=new Sprite(tex);
+            button.setScale(scale);
+            button.setPosition(1280/2f-(45*gameButtonSheet.length)+id*42,720/2f-55);
+            this.name=name;
+            this.id=id;
+        }
+        public void render(SpriteBatch sb){
+            button.draw(sb);
+            if(active){
+                if(scale<0.67f){
+                    scale+=Gdx.graphics.getDeltaTime()*1.1f;
+                }
+                button.setScale(scale);
+            }else{
+                if(scale>0.6f){
+                    scale-=Gdx.graphics.getDeltaTime();
+                    button.setScale(scale);
+                }
+            }
+        }
+    }
+
+
     public GameScreen(TrashTumble game){
         json = new Json();
         json.setSerializer(LevelEdit.GameMap.class, new GameMapSerializer());
@@ -65,7 +107,19 @@ public class GameScreen implements Screen {
         viewport=new ExtendViewport(1280/2f,720/2f,camera);
         viewport.apply();
         world = new World(new Vector2(0, -9.8f), true);
+        gameButtonSheet=extractSprite(files("game_button_sheet.png"),64,64);
+        int index=0;
+        for(String name : gameButtonNames){
+            gameButtonList.add(new GameButton(gameButtonSheet[index],name,index));
+            index++;
+        }
+
+        backgrounds=new TextureRegion[3];
+        for(int i=1;i<4;i++){
+            backgrounds[i-1]=new TextureRegion(new Texture(files("gameBG_"+i+".png")));
+        }
     }
+
 
 
 
@@ -84,8 +138,13 @@ public class GameScreen implements Screen {
         camera.update();
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
+        batch.draw(backgrounds[gameBG],0,0,1280/2f,720/2f);
         if(gameRun){
-            world.step(Gdx.graphics.getDeltaTime(), 6, 2);
+            world.step(delta*simulationSpeed, 6, 2);
+        }
+
+        for(GameButton btn : gameButtonList){
+            btn.render(batch);
         }
 
         batch.end();
@@ -93,12 +152,63 @@ public class GameScreen implements Screen {
 
     @Override
     public void show() {
+        Gdx.input.setInputProcessor(new InputProcessor() {
+            @Override
+            public boolean keyDown(int keycode) {
+                return false;
+            }
 
+            @Override
+            public boolean keyUp(int keycode) {
+                return false;
+            }
+
+            @Override
+            public boolean keyTyped(char character) {
+                return false;
+            }
+
+            @Override
+            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                return false;
+            }
+
+            @Override
+            public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+                return false;
+            }
+
+            @Override
+            public boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
+                return false;
+            }
+
+            @Override
+            public boolean touchDragged(int screenX, int screenY, int pointer) {
+                return false;
+            }
+
+            @Override
+            public boolean mouseMoved(int screenX, int screenY) {
+                touch = new Vector3(screenX,screenY,0);
+                camera.unproject(touch);
+                point = new Vector2(touch.x,touch.y);
+                for(GameButton button : gameButtonList){
+                    button.active=button.button.getBoundingRectangle().contains(point);
+                }
+                return false;
+            }
+
+            @Override
+            public boolean scrolled(float amountX, float amountY) {
+                return false;
+            }
+        });
     }
 
     @Override
     public void resize(int width, int height) {
-
+        viewport.update(width,height,true);
     }
 
     @Override
@@ -113,12 +223,12 @@ public class GameScreen implements Screen {
 
     @Override
     public void hide() {
-
+        Gdx.input.setInputProcessor(null);
     }
 
     @Override
     public void dispose() {
-
+        batch.dispose();
     }
 
 
@@ -163,7 +273,6 @@ public class GameScreen implements Screen {
                     }
                 }
                 gameMap.add(new GameMap((int) id,(int) objType,x,y,rotation,scale));
-                //add items here!
                 start = -1;
             }
         }
