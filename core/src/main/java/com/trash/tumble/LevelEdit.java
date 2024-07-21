@@ -37,7 +37,7 @@ public class LevelEdit implements Screen {
 
     static Sprite draggable;
 
-    TextureRegion[] editButtonSheet,uiBoxSheet,editObjectSheet,editPanelButtonSheet,trashBagSheet,trashCanSheet,panelObjectSheet,specialObjectSheet;
+    TextureRegion[] editButtonSheet,uiBoxSheet,editObjectSheet,editPanelButtonSheet,trashBagSheet,trashCanSheet,panelObjectSheet,specialObjectSheet,selectSheet;
     String[] levelMenuButton={"close","done","toggle"};
     String[] editObjectName={"rotate","sizeUP","sizeDOWN","delete"};
 
@@ -51,6 +51,7 @@ public class LevelEdit implements Screen {
     Array<PanelTrashCan> panelTrashCans = new Array<>();
     Array<PanelObject> panelObjects= new Array<>();
     Array<SpecialObject> specialObjects= new Array<>();
+    Array<SceneObject> sceneObjects=new Array<>();
 
 
     int currentBG=0;
@@ -58,7 +59,7 @@ public class LevelEdit implements Screen {
     static int dragId=0;
     static int dragType=0;
     boolean showPanel=false;
-    static boolean dragging=false;
+    static boolean dragging=false,sceneObjectDragging=false,focused=false;
 
     public LevelEdit(TrashTumble game){
         this.game=game;
@@ -91,6 +92,9 @@ public class LevelEdit implements Screen {
         trashCanSheet=extractSprite(files("trashcan_sheet.png"),192,192);
         panelObjectSheet=extractSprite(files("objects_sheet.png"),64,64);
         specialObjectSheet=extractSprite(files("special_object_sheet.png"),64,64);
+        selectSheet=extractSprite(files("select.png"),64,64);
+
+
 
         for(int i=0;i<3;i++){
             editPanelButtons.add(new EditPanelButton(editPanelButtonSheet[i],i));
@@ -124,6 +128,46 @@ public class LevelEdit implements Screen {
 
         uiBoxSheet=extractSprite(files("ui_box_sheet.png"),64,64);
 
+    }
+
+
+
+    public class SceneObject{
+
+        Sprite object;
+        int id,type;
+        float scale,size,rotation,x,y;
+        boolean active=false,focus=false;
+
+        public SceneObject(TextureRegion tex,float x,float y,int id,int type,float size){
+            object=new Sprite(tex);
+            object.setPosition(x,y);
+            object.setScale(size);
+
+            this.scale=size;
+            this.size=size;
+            this.id=id;
+            this.type=type;
+        }
+        public void render(SpriteBatch sb){
+            if(focus&&focused){
+             object.setAlpha(0.8f);
+            }else object.setAlpha(1f);
+
+            object.draw(sb);
+
+            if(active){
+                if(scale<=size+0.1f){
+                    scale+=Gdx.graphics.getDeltaTime()*1.7f;
+                }
+                object.setScale(scale);
+            }else{
+                if(scale>size){
+                    scale-=Gdx.graphics.getDeltaTime();
+                    object.setScale(scale);
+                }
+            }
+        }
     }
 
     public class SpecialObject{
@@ -468,6 +512,17 @@ public class LevelEdit implements Screen {
             camera.unproject(touch);
             point = new Vector2(touch.x,touch.y);
 
+
+            for(SceneObject object : sceneObjects){
+                if(!object.active && object.object.getBoundingRectangle().contains(point)){
+                    object.active=true;
+                    object.focus=true;
+                    focused=true;
+                    sceneObjectDragging=true;
+                    break;
+                }
+            }
+
             if(showPanel){
                 switch(panelIndex){
                     case 0:{
@@ -507,7 +562,62 @@ public class LevelEdit implements Screen {
             camera.unproject(touch);
             point = new Vector2(touch.x,touch.y);
 
-            if(dragging)dragging=false;
+            if(dragging){
+                sceneObjects.add(new SceneObject(draggable,draggable.getX(),draggable.getY(),dragId,dragType,draggable.getScaleX()));
+                dragging=false;
+            }
+            if(focused){
+                boolean isoFF=true;
+                for(SceneObject object : sceneObjects){
+                    if(object.object.getBoundingRectangle().contains(point)){
+                        isoFF=false;
+                    }
+                }
+                if(isoFF && touch.y<(720/2f-60)){
+                    focused=false;
+                    for(SceneObject object : sceneObjects){
+                        object.focus=false;
+                        object.active=false;
+                    }
+                }
+            }
+
+            if(sceneObjectDragging){
+                for(SceneObject object : sceneObjects){
+                    if(object.active){
+                        object.active=false;
+
+                    }
+                    sceneObjectDragging=false;
+                }
+            }
+
+
+            for(EditObjectButton object : editObjectList){
+                if(object.button.getBoundingRectangle().contains(point)){
+                    for(SceneObject sprites : sceneObjects){
+                        if(sprites.focus)switch(object.name){
+                            case "rotate":{
+                                sprites.rotation+=15f;
+                                sprites.object.rotate(15f);
+                            }break;
+                            case "sizeUP":{
+                                sprites.scale+=0.05f;
+                                sprites.size=sprites.scale;
+                                sprites.object.setScale(sprites.scale);
+                            }break;
+                            case "sizeDOWN":{
+                                sprites.scale-=0.05f;
+                                sprites.size=sprites.scale;
+                                sprites.object.setScale(sprites.scale);
+                            }break;
+                            case "delete":{
+                                sceneObjects.removeValue(sprites,true);
+                            }break;
+                        }
+                    }
+                }
+            }
 
             for(EditMenuButton btn : levelMenuButtonList){
                 if(btn.button.getBoundingRectangle().contains(point)){
@@ -587,6 +697,13 @@ public class LevelEdit implements Screen {
             if(dragging){
                 draggable.setPosition(touch.x-draggable.getWidth()/2f,touch.y-draggable.getHeight()/2f);
             }
+            if(sceneObjectDragging){
+                for(SceneObject object : sceneObjects){
+                    if(object.active){
+                        object.object.setPosition(touch.x-object.object.getWidth()/2f,touch.y-object.object.getHeight()/2f);
+                    }
+                }
+            }
             return false;
         }
 
@@ -641,6 +758,10 @@ public class LevelEdit implements Screen {
         batch.begin();
         batch.draw(backgrounds[currentBG],0,0,worldWidth,worldHeight);
 
+        for(SceneObject object : sceneObjects){
+            object.render(batch);
+        }
+
         for(EditMenuButton button :levelMenuButtonList){
             button.render(batch);
         }
@@ -648,6 +769,7 @@ public class LevelEdit implements Screen {
         for(EditObjectButton button : editObjectList){
             button.render(batch);
         }
+
 
 
 
@@ -684,6 +806,8 @@ public class LevelEdit implements Screen {
         if(dragging){
             draggable.draw(batch);
         }
+
+
 
         batch.end();
     }

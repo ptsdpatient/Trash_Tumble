@@ -4,7 +4,7 @@ import com.badlogic.gdx.Screen;
 
 public class GameScreen implements Screen {
 
-    public GameScreen(TrashTumble game){
+    public GameScreen(TrashTumble game,){
 
     }
     @Override
