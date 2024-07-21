@@ -779,6 +779,46 @@ public class GameScreen implements Screen {
 
             @Override
             public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+                touch = new Vector3(screenX,screenY,0);
+                camera.unproject(touch);
+                point = new Vector2(touch.x,touch.y);
+                for(GameButton btn :gameButtonList){
+                    if(btn.button.getBoundingRectangle().contains(point)){
+                        switch(btn.name){
+                            case "slow":{
+                                simulationSpeed=0.3f;
+                            }break;
+                            case "fast":{
+                                simulationSpeed=3f;
+                            }break;
+                            case "restart":{
+                                gameMap.clear();
+                                objectInstances.clear();
+                                specialInstances.clear();
+                                trashBagInstances.clear();
+                                trashCanInstances.clear();
+                                initializeWorld();
+                            }break;
+                            case "pause":{
+                                gameRun=false;
+                            }break;
+                            case "play":{
+                                gameRun=true;
+                                simulationSpeed=1f;
+                            }break;
+                            case "levels":{
+
+                            }break;
+                            case "home":{
+                                game.setMenuScreen();
+                            }break;
+                            case "next":{
+
+                            }break;
+                        }
+                    }
+                }
+
                 return false;
             }
 
@@ -835,7 +875,6 @@ public class GameScreen implements Screen {
         world.dispose();
         batch.dispose();
         debugRenderer.dispose();
-
     }
 
 

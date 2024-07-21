@@ -8,6 +8,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -36,8 +37,9 @@ public class LevelEdit implements Screen {
     private Viewport viewport;
     private Texture[] backgrounds=new Texture[4];
     float worldWidth=1280/2f,worldHeight=780/2f;
+    String gameMap;
     Json json;
-
+    FileHandle levelFile;
     static Sprite draggable;
 
     TextureRegion[] editButtonSheet,uiBoxSheet,editObjectSheet,editPanelButtonSheet,trashBagSheet,trashCanSheet,panelObjectSheet,specialObjectSheet,selectSheet;
@@ -69,7 +71,7 @@ public class LevelEdit implements Screen {
         this.batch=game.batch;
         json= new Json();
         json.setSerializer(GameMap.class, new GameMapSerializer());
-
+        levelFile= Gdx.files.local("levels.txt");
         for(int i =0;i<3;i++)backgrounds[i]=new Texture(files("gameBG_"+(i+1)+".png"));
 
         camera=new OrthographicCamera();
@@ -648,9 +650,13 @@ public class LevelEdit implements Screen {
 
                             for(SceneObject object : sceneObjects){
                                 gameMapList.add(new GameMap(object.id,object.type,object.object.getX(),object.object.getY(),object.object.getRotation(),object.scale));
-
                             }
-                            game.startGame(json.toJson(gameMapList),currentBG);
+                            gameMap=json.toJson(gameMapList);
+                            print(gameMap);
+
+                            levelFile.writeString(gameMap+","+currentBG+"\n", true);
+                            game.startGame(gameMap,currentBG);
+
                             }break;
                         case 2:
                             showPanel = !showPanel;
