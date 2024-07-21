@@ -32,7 +32,6 @@ public class TrashTumble extends Game {
     private LevelScreen levelScreen;
     public InputMultiplexer inputMultiplexer;
 
-
     @Override
     public void create() {
         Gdx.graphics.setCursor( Gdx.graphics.newCursor(new Pixmap(Gdx.files.internal("cursor.png")), 0, 0));
@@ -44,7 +43,9 @@ public class TrashTumble extends Game {
         setScreen(startMenu);
     }
 
-    public void startGame(){
+    public void startGame(String gameMap,int currentBG){
+        gameScreen.setGameMap(gameMap);
+        gameScreen.setBG(currentBG);
         this.setScreen(gameScreen);
     }
     public void startEdit(){

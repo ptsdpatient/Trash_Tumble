@@ -146,7 +146,7 @@ public class StartMenu implements Screen {
                 for(Button btn : buttonList){
                     if(btn.button.getBoundingRectangle().contains(point)){
                         switch(btn.id){
-                            case 0:game.startGame();break;
+                            case 0:game.setLevelScreen();break;
                             case 1:game.startEdit();break;
                             case 2:Gdx.app.exit();break;
                         }

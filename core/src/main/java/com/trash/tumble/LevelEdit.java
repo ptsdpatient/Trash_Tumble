@@ -17,6 +17,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonWriter;
 import com.badlogic.gdx.utils.SnapshotArray;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -34,6 +36,7 @@ public class LevelEdit implements Screen {
     private Viewport viewport;
     private Texture[] backgrounds=new Texture[4];
     float worldWidth=1280/2f,worldHeight=780/2f;
+    Json json;
 
     static Sprite draggable;
 
@@ -52,7 +55,7 @@ public class LevelEdit implements Screen {
     Array<PanelObject> panelObjects= new Array<>();
     Array<SpecialObject> specialObjects= new Array<>();
     Array<SceneObject> sceneObjects=new Array<>();
-
+    Array<GameMap> gameMapList=new Array<>();
 
     int currentBG=0;
     int panelIndex=0;
@@ -64,6 +67,8 @@ public class LevelEdit implements Screen {
     public LevelEdit(TrashTumble game){
         this.game=game;
         this.batch=game.batch;
+        json= new Json();
+        json.setSerializer(GameMap.class, new GameMapSerializer());
 
         for(int i =0;i<3;i++)backgrounds[i]=new Texture(files("gameBG_"+(i+1)+".png"));
 
@@ -131,6 +136,20 @@ public class LevelEdit implements Screen {
     }
 
 
+
+    public static class GameMap{
+        int id,type,index;
+        float scale,rotation,x,y;
+        public GameMap(int id,int type,float x,float y,float rotation,float scale){
+            this.id=id;
+            this.type=type;
+            this.x=x;
+            this.y=y;
+            this.rotation=rotation;
+            this.scale=scale;
+
+        }
+    }
 
     public class SceneObject{
 
@@ -625,9 +644,14 @@ public class LevelEdit implements Screen {
                         case 0:
                             game.setMenuScreen();
                             break;
-                        case 1:
-                            game.startGame();
-                            break;
+                        case 1: {
+
+                            for(SceneObject object : sceneObjects){
+                                gameMapList.add(new GameMap(object.id,object.type,object.object.getX(),object.object.getY(),object.object.getRotation(),object.scale));
+
+                            }
+                            game.startGame(json.toJson(gameMapList),currentBG);
+                            }break;
                         case 2:
                             showPanel = !showPanel;
                             btn.button.setX(showPanel ? 200f : 0);
@@ -770,9 +794,6 @@ public class LevelEdit implements Screen {
             button.render(batch);
         }
 
-
-
-
         if(showPanel){
 
             for(EditPanelButton buttons : editPanelButtons){
@@ -807,8 +828,6 @@ public class LevelEdit implements Screen {
             draggable.draw(batch);
         }
 
-
-
         batch.end();
     }
 
@@ -825,7 +844,7 @@ public class LevelEdit implements Screen {
         draggable=new Sprite(tex);
         draggable.setScale(scale+(type==0?0.2f:0.8f));
 
-        print(scale+" : "+draggable.getScaleX());
+//        print(scale+" : "+draggable.getScaleX());
         dragCoordinates = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
         camera.unproject(dragCoordinates);
         draggable.setPosition(dragCoordinates.x- draggable.getWidth()/2f, dragCoordinates.y-draggable.getHeight()/2f);
