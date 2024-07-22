@@ -25,12 +25,13 @@ import com.badlogic.gdx.utils.ScreenUtils;
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class TrashTumble extends Game {
     public SpriteBatch batch;
-
+    public String[] levels;
     private StartMenu startMenu;
     private GameScreen gameScreen;
     private LevelEdit levelEdit;
     private LevelScreen levelScreen;
     public InputMultiplexer inputMultiplexer;
+    public int currentLevel=0;
 
     @Override
     public void create() {
@@ -45,17 +46,24 @@ public class TrashTumble extends Game {
     }
 
     public void startGame(String gameMap,int currentBG){
+
         gameScreen.worldSet();
         gameScreen.setGameMap(gameMap);
         gameScreen.setBG(currentBG);
         this.setScreen(gameScreen);
     }
+
+
+
     public void startEdit(){
         this.setScreen(levelEdit);
     }
     public void setLevelScreen(){
         levelScreen.loadLevels();
         this.setScreen(levelScreen);
+    }
+    public void setLevels(String[] levels){
+        this.levels=levels;
     }
     public void setMenuScreen(){
         this.setScreen(startMenu);

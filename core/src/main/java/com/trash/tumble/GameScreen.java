@@ -638,7 +638,7 @@ public class GameScreen implements Screen {
 
         private void createBox(float x, float y,float width,float height,float density,float friction,float restitution, float size, World world) {
             BodyDef bodyDef = new BodyDef();
-            bodyDef.type = BodyDef.BodyType.DynamicBody;
+            bodyDef.type = BodyDef.BodyType.KinematicBody;
             bodyDef.position.set(x, y);
             bodyDef.angle = (float) Math.toRadians(object.getRotation());
             body = world.createBody(bodyDef);
