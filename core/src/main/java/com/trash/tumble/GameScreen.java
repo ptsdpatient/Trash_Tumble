@@ -61,13 +61,13 @@ public class GameScreen implements Screen {
     Sprite nextGameButton;
     Vector3 touch;
     Vector2 point;
-    TextureRegion[] gameButtonSheet,backgrounds,objectSheet,specialSheet,trashCanSheet,trashBagSheet;
+    TextureRegion[] gameButtonSheet,backgrounds,objectSheet,specialSheet,trashCanSheet,trashBagSheet,raySheet;
     Array<GameButton> gameButtonList = new Array<>();
     Array<ObjectInstance> objectInstances=new Array<>();
     Array<SpecialInstance> specialInstances=new Array<>();
     Array<TrashBagInstance> trashBagInstances=new Array<>();
     Array<TrashCanInstance> trashCanInstances=new Array<>();
-    Array<Body> worldBodies=new Array<>();
+    Array<RayInstance> rays = new Array<>();
     GameContactListener listener;
 
 
@@ -98,8 +98,34 @@ public class GameScreen implements Screen {
         groundBox.setAsBox(1280/2f, 2);
         groundBody.createFixture(groundBox, 0.0f);
         groundBox.dispose();
-        listener=new GameContactListener(trashCanInstances, trashBagInstances, objectInstances,specialInstances);
+        listener=new GameContactListener(trashCanInstances, trashBagInstances, objectInstances,specialInstances,rays);
         world.setContactListener(listener);
+    }
+
+
+    public class RayInstance{
+        Sprite object;
+        float speed=0,distance=0;
+        private Vector2 position;
+        int id=0;
+        public RayInstance(TextureRegion region,float x,float y,float rotation,float scale,float speed,int id){
+            object=new Sprite(region);
+            object.setPosition(x,y);
+            object.setScale(scale);
+            object.setRotation(rotation);
+            this.id=id;
+            this.speed=speed;
+            this.position=new Vector2(x,y);
+        }
+        public void update(float deltaTime){
+            position.x += (float) (speed * deltaTime * Math.cos(Math.toRadians(object.getRotation())));
+            position.y += (float) (speed * deltaTime * Math.sin(Math.toRadians(object.getRotation())));
+            distance+=speed;
+        }
+        public void render(SpriteBatch sb){
+            object.setPosition(position.x, position.y);
+            object.draw(sb);
+        }
     }
 
     public static class GameMap{
@@ -118,6 +144,7 @@ public class GameScreen implements Screen {
     public class ObjectInstance{
         Sprite object;
         int id;
+
         float width=0,height=0,density=0,radius=0,friction=0,restitution=0;
         float xDiff=0,yDiff=0,linearDamping=0,angularDamping=0;
         private Body body;
@@ -339,7 +366,7 @@ public class GameScreen implements Screen {
         Sprite object;
         int id;
         boolean triggered=false;
-        float width=0,height=0,density=0,radius=0,friction=0,restitution=0;
+        float width=0,height=0,density=0,radius=0,friction=0,restitution=0,scale;
         float xDiff=0,yDiff=0,linearDamping=0,angularDamping=0;
         private Body body;
         boolean makeBox=true,makeCircle=false;
@@ -349,6 +376,7 @@ public class GameScreen implements Screen {
             object.setPosition(x,y);
             object.setScale(size);
             object.setRotation(rotation);
+            this.scale=size;
             this.id=id;
             switch(id){
                 case 0:{
@@ -735,6 +763,8 @@ public class GameScreen implements Screen {
         specialSheet=extractSprite(files("special_object_sheet.png"),64,64);
         trashCanSheet=extractSprite(files("trashcan_sheet.png"),192,192);
         trashBagSheet=extractSprite(files("trashbag_sheet.png"),128,128);
+        raySheet=extractSprite(files("ray_sheet.png"),64,16);
+
         nextGameButton=new Sprite(new Texture(files("nextLevel.png")));
         nextGameButton.setPosition(1280/4f-nextGameButton.getWidth()/2f,720/4f-nextGameButton.getHeight()/2f);
 
@@ -811,6 +841,25 @@ public class GameScreen implements Screen {
         for(TrashBagInstance obj : trashBagInstances){
             obj.render(batch);
         }
+        for(RayInstance ray : rays){
+            ray.update(delta);
+            ray.render(batch);
+            for(ObjectInstance obj : objectInstances){
+                if(ray.object.getBoundingRectangle().overlaps(obj.object.getBoundingRectangle())){
+                    print("collision, mass : "+obj.body.getMass());
+                    Vector2 force;
+                    switch(ray.id) {
+                        case 0:{
+                        force = new Vector2(0, 20000f * obj.body.getMass());
+                        obj.body.applyForceToCenter(force, true);
+                        }break;
+                    }
+                    rays.removeValue(ray,true);
+
+                }
+            }
+
+        }
 
         if(gameWon){
             nextGameButton.draw(batch);
@@ -821,6 +870,9 @@ public class GameScreen implements Screen {
 
         shapeRenderer.end();
     }
+
+
+
 
     @Override
     public void show() {
@@ -1006,11 +1058,13 @@ public class GameScreen implements Screen {
         private Array<TrashBagInstance> trashbags;
         private Array<ObjectInstance> objects;
         private Array<SpecialInstance> specialObjects;
-        public GameContactListener(Array<TrashCanInstance> trashcans,Array<TrashBagInstance> trashbags,Array<ObjectInstance> objects, Array<SpecialInstance> specialObjects) {
+        private Array<RayInstance> rays;
+        public GameContactListener(Array<TrashCanInstance> trashcans,Array<TrashBagInstance> trashbags,Array<ObjectInstance> objects, Array<SpecialInstance> specialObjects,Array<RayInstance> rays) {
             this.trashcans = trashcans;
             this.specialObjects = specialObjects;
             this.objects=objects;
             this.trashbags=trashbags;
+            this.rays=rays;
         }
 
         @Override
@@ -1036,6 +1090,8 @@ public class GameScreen implements Screen {
 //            Fixture otherFixture = (fixtureA.isSensor()) ? fixtureB : fixtureA;
 //            Body otherBody = otherFixture.getBody();
 
+
+
             for (SpecialInstance specialObj : specialObjects) {
                 if (isContactWithTrashCan(fixtureA, fixtureB) ||
                     isContactWithTrashBag(fixtureA, fixtureB) ||
@@ -1058,15 +1114,28 @@ public class GameScreen implements Screen {
                                 fixtureB.getBody().applyForceToCenter(force, true);
                             }break;
                             case 2:{
-                                print("beam sent");
-                                float angle = specialObj.object.getRotation();
-                                Vector2 direction = new Vector2(MathUtils.cosDeg(angle), MathUtils.sinDeg(angle));
-//                                otherBody.applyLinearImpulse(direction.scl(80000), otherBody.getWorldCenter(), true);
-
+                                float rayX = specialObj.object.getX() + specialObj.object.getWidth() / 1.2f * MathUtils.cosDeg(specialObj.object.getRotation()) - specialObj.object.getHeight() / 1.4f * MathUtils.sinDeg(specialObj.object.getRotation());
+                                float rayY = specialObj.object.getY() + specialObj.object.getWidth() / 1.2f * MathUtils.sinDeg(specialObj.object.getRotation()) + specialObj.object.getHeight() / 1.4f * MathUtils.cosDeg(specialObj.object.getRotation());
+                                rays.add(new RayInstance(raySheet[specialObj.id-2],rayX,rayY,specialObj.object.getRotation(),specialObj.scale-0.8f,700f,specialObj.id-2));
                             }break;
-
+                            case 3:{
+                                float rayX = specialObj.object.getX() + specialObj.object.getWidth() / 1.2f * MathUtils.cosDeg(specialObj.object.getRotation()) - specialObj.object.getHeight() / 1.4f * MathUtils.sinDeg(specialObj.object.getRotation());
+                                float rayY = specialObj.object.getY() + specialObj.object.getWidth() / 1.2f * MathUtils.sinDeg(specialObj.object.getRotation()) + specialObj.object.getHeight() / 1.4f * MathUtils.cosDeg(specialObj.object.getRotation());
+                                rays.add(new RayInstance(raySheet[specialObj.id-2],rayX,rayY,specialObj.object.getRotation(),specialObj.scale-0.8f,700f,specialObj.id-2));
+                            }break;
+                            case 4:{
+                                float rayX = specialObj.object.getX() + specialObj.object.getWidth() / 1.2f * MathUtils.cosDeg(specialObj.object.getRotation()) - specialObj.object.getHeight() / 1.4f * MathUtils.sinDeg(specialObj.object.getRotation());
+                                float rayY = specialObj.object.getY() + specialObj.object.getWidth() / 1.2f * MathUtils.sinDeg(specialObj.object.getRotation()) + specialObj.object.getHeight() / 1.4f * MathUtils.cosDeg(specialObj.object.getRotation());
+                                rays.add(new RayInstance(raySheet[specialObj.id-2],rayX,rayY,specialObj.object.getRotation(),specialObj.scale-0.8f,700f,specialObj.id-2));
+                            }break;
+                            case 5:{
+                                world.setGravity(new Vector2(-world.getGravity().y,0));
+                                   }break;
                             case 6:{
                                 world.setGravity(new Vector2(0,-world.getGravity().y));
+                            }break;
+                            case 7:{
+                                world.setGravity(new Vector2(9.8f,9.8f));
                             }break;
                         }
                     }
