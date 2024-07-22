@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Methods {
+    static int index=0;
     public static FileHandle files(String item){
         return Gdx.files.internal(item);
     }
@@ -13,13 +14,16 @@ public class Methods {
         return new TextureRegion(new Texture(file)).split(width,height)[0];
     }
     public static void print(String line){
-        Gdx.app.log("",line);
+        index++;
+        Gdx.app.log(index+"",line);
     }
 
     public static void print(int line){
-        Gdx.app.log("",line+"");
+        index++;
+        Gdx.app.log(index+"",line+"");
     }
     public static void print(float line){
-        Gdx.app.log("",""+line);
+        index++;
+        Gdx.app.log(index+"",line+"");
     }
 }

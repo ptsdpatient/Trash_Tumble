@@ -135,7 +135,6 @@ public class LevelScreen implements Screen {
         levelFile= Gdx.files.local("levels.txt");
         String[] lines = levelFile.readString().split("\n");
 
-        game.setLevels(lines);
 
         int i=0,j=0,index=0;
         for(String line : lines){

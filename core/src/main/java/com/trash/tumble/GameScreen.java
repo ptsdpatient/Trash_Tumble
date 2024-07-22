@@ -16,14 +16,22 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.CircleShape;
+import com.badlogic.gdx.physics.box2d.Contact;
+import com.badlogic.gdx.physics.box2d.ContactImpulse;
+import com.badlogic.gdx.physics.box2d.ContactListener;
+import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.Manifold;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
@@ -42,23 +50,25 @@ public class GameScreen implements Screen {
     Json json;
     private SpriteBatch batch;
     private static OrthographicCamera camera;
+    private ShapeRenderer shapeRenderer;
     private Viewport viewport;
     Array<GameMap> gameMap = new Array<>();
     private World world;
     private Box2DDebugRenderer debugRenderer;
     boolean gameRun=true,gameWon=false;
-    float simulationSpeed=1;
+    float simulationSpeed=1,time=0f;
     int gameBG=0;
     Sprite nextGameButton;
     Vector3 touch;
     Vector2 point;
     TextureRegion[] gameButtonSheet,backgrounds,objectSheet,specialSheet,trashCanSheet,trashBagSheet;
-
     Array<GameButton> gameButtonList = new Array<>();
     Array<ObjectInstance> objectInstances=new Array<>();
     Array<SpecialInstance> specialInstances=new Array<>();
     Array<TrashBagInstance> trashBagInstances=new Array<>();
     Array<TrashCanInstance> trashCanInstances=new Array<>();
+    Array<Body> worldBodies=new Array<>();
+    GameContactListener listener;
 
 
     String[] gameButtonNames={"slow","fast","restart","pause","play","back","home"};
@@ -68,6 +78,8 @@ public class GameScreen implements Screen {
     }
 
     public void worldSet(){
+        world.setContactListener(null);
+        time=0f;
         gameWon=false;
         gameRun=true;
         objectInstances.clear();
@@ -75,7 +87,7 @@ public class GameScreen implements Screen {
         trashBagInstances.clear();
         trashCanInstances.clear();
         world.dispose();
-        world = new World(new Vector2(0, -9.8f*5), true);
+        world = new World(new Vector2(0, -9.8f*5*(gameBG==1?0.4f:1)), true);
         debugRenderer = new Box2DDebugRenderer();
 
         BodyDef groundBodyDef = new BodyDef();
@@ -86,6 +98,8 @@ public class GameScreen implements Screen {
         groundBox.setAsBox(1280/2f, 2);
         groundBody.createFixture(groundBox, 0.0f);
         groundBox.dispose();
+        listener=new GameContactListener(trashCanInstances, trashBagInstances, objectInstances,specialInstances);
+        world.setContactListener(listener);
     }
 
     public static class GameMap{
@@ -324,6 +338,7 @@ public class GameScreen implements Screen {
     public class SpecialInstance{
         Sprite object;
         int id;
+        boolean triggered=false;
         float width=0,height=0,density=0,radius=0,friction=0,restitution=0;
         float xDiff=0,yDiff=0,linearDamping=0,angularDamping=0;
         private Body body;
@@ -430,6 +445,7 @@ public class GameScreen implements Screen {
             fixtureDef.density = density;
             fixtureDef.friction = friction;
             fixtureDef.restitution = restitution;
+//            fixtureDef.isSensor=true;
             body.createFixture(fixtureDef);
             circleShape.dispose();
             body.setLinearDamping(linearDamping);
@@ -452,6 +468,7 @@ public class GameScreen implements Screen {
             fixtureDef.density = density;
             fixtureDef.friction = friction;
             fixtureDef.restitution = restitution;
+//            fixtureDef.isSensor=true;
             body.createFixture(fixtureDef);
             shape.dispose();
             body.setLinearDamping(linearDamping);
@@ -469,7 +486,7 @@ public class GameScreen implements Screen {
     public class TrashBagInstance{
         Sprite object;
         int id;
-        float width=0,height=0,density=0,radius=0,friction=0,restitution=0;
+        float width=0,height=0,density=0,radius=0,friction=0,restitution=0,scale=0;
         float xDiff=0,yDiff=0,linearDamping=0,angularDamping=0;
         private Body body;
         boolean makeBox=true,makeCircle=false;
@@ -477,9 +494,11 @@ public class GameScreen implements Screen {
         public TrashBagInstance(TextureRegion tex,float x,float y,float rotation,int id,float size){
             object=new Sprite(tex);
             object.setPosition(x,y);
+            this.scale=size;
             object.setScale(size);
             object.setRotation(rotation);
             this.id=id;
+
             switch(id) {
                 case 0:{
                     makeBox=false;
@@ -517,6 +536,9 @@ public class GameScreen implements Screen {
             }
             if(makeBox)createBox(x, y,width,height,density,friction,restitution, size, world);
             if(makeCircle) createCircle(x, y,radius,size,density,friction,restitution, world);
+
+
+
 
         }
         private void createCircle(float x, float y,float radius,float size,float density,float friction,float restitution,World world){
@@ -560,10 +582,11 @@ public class GameScreen implements Screen {
             body.setAngularDamping(angularDamping);
         }
         public void render(SpriteBatch sb){
+
+
             object.setPosition(body.getPosition().x+xDiff - object.getWidth() / 2, body.getPosition().y+yDiff - object.getHeight() / 2);
             object.setRotation((float) Math.toDegrees(body.getAngle()));
             object.draw(sb);
-
         }
     }
     public class TrashCanInstance{
@@ -706,7 +729,7 @@ public class GameScreen implements Screen {
         viewport.apply();
         world = new World(new Vector2(0, -9.8f*5), true);
         worldSet();
-
+        shapeRenderer=new ShapeRenderer();
         gameButtonSheet=extractSprite(files("game_button_sheet.png"),64,64);
         objectSheet=extractSprite(files("objects_sheet.png"),64,64);
         specialSheet=extractSprite(files("special_object_sheet.png"),64,64);
@@ -769,6 +792,7 @@ public class GameScreen implements Screen {
 
         if(gameRun){
             world.step(delta*simulationSpeed, 6, 2);
+            time+=delta;
         }
 
 
@@ -786,13 +810,6 @@ public class GameScreen implements Screen {
         }
         for(TrashBagInstance obj : trashBagInstances){
             obj.render(batch);
-            for(TrashCanInstance can : trashCanInstances){
-                if(can.object.getBoundingRectangle().overlaps(obj.object.getBoundingRectangle())){
-                    gameRun=false;
-                    gameWon=true;
-                    trashBagInstances.removeValue(obj,true);
-                }
-            }
         }
 
         if(gameWon){
@@ -800,7 +817,9 @@ public class GameScreen implements Screen {
         }
         batch.end();
         debugRenderer.render(world, camera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
+        shapeRenderer.end();
     }
 
     @Override
@@ -853,7 +872,7 @@ public class GameScreen implements Screen {
                                 initializeWorld();
                             }break;
                             case "pause":{
-                                gameRun=false;
+                                gameRun=!gameRun;
                             }break;
                             case "play":{
                                 gameRun=true;
@@ -980,4 +999,126 @@ public class GameScreen implements Screen {
             }
         }
     }
+
+
+    public class GameContactListener implements ContactListener {
+        private Array<TrashCanInstance> trashcans;
+        private Array<TrashBagInstance> trashbags;
+        private Array<ObjectInstance> objects;
+        private Array<SpecialInstance> specialObjects;
+        public GameContactListener(Array<TrashCanInstance> trashcans,Array<TrashBagInstance> trashbags,Array<ObjectInstance> objects, Array<SpecialInstance> specialObjects) {
+            this.trashcans = trashcans;
+            this.specialObjects = specialObjects;
+            this.objects=objects;
+            this.trashbags=trashbags;
+        }
+
+        @Override
+        public void endContact(Contact contact) {
+            // Implement if needed
+        }
+
+        @Override
+        public void preSolve(Contact contact, Manifold oldManifold) {
+            // Implement if needed
+        }
+
+        @Override
+        public void postSolve(Contact contact, ContactImpulse impulse) {
+            // Implement if needed
+        }
+
+        @Override
+        public void beginContact(Contact contact) {
+            Fixture fixtureA = contact.getFixtureA();
+            Fixture fixtureB = contact.getFixtureB();
+
+//            Fixture otherFixture = (fixtureA.isSensor()) ? fixtureB : fixtureA;
+//            Body otherBody = otherFixture.getBody();
+
+            for (SpecialInstance specialObj : specialObjects) {
+                if (isContactWithTrashCan(fixtureA, fixtureB) ||
+                    isContactWithTrashBag(fixtureA, fixtureB) ||
+                    isContactWithObject(fixtureA, fixtureB)) {
+
+                    if(!specialObj.triggered && time>2f){
+
+
+                        specialObj.triggered = true;
+                        switch(specialObj.id){
+                            case 0:{
+                                Vector2 force = new Vector2(0, 700f); // Force vector (change magnitude as needed)
+                                fixtureA.getBody().applyForceToCenter(force, true);
+                                fixtureB.getBody().applyForceToCenter(force, true);
+                            }break;
+
+                            case 1:{
+                                Vector2 force = new Vector2(0, 2000f); // Force vector (change magnitude as needed)
+                                fixtureA.getBody().applyForceToCenter(force, true);
+                                fixtureB.getBody().applyForceToCenter(force, true);
+                            }break;
+                            case 2:{
+                                print("beam sent");
+                                float angle = specialObj.object.getRotation();
+                                Vector2 direction = new Vector2(MathUtils.cosDeg(angle), MathUtils.sinDeg(angle));
+//                                otherBody.applyLinearImpulse(direction.scl(80000), otherBody.getWorldCenter(), true);
+
+                            }break;
+
+                            case 6:{
+                                world.setGravity(new Vector2(0,-world.getGravity().y));
+                            }break;
+                        }
+                    }
+                }
+            }
+            for(TrashBagInstance bag : trashbags){
+                if(isContactWithTrashCanAbsolute(fixtureA,fixtureB,bag.id)){
+                   gameWon=true;
+                   gameRun=false;
+                   trashbags.removeValue(bag,true);
+                }
+            }
+        }
+        private boolean isContactWithTrashCan(Fixture fixtureA, Fixture fixtureB) {
+            for (TrashCanInstance trashCan : trashcans) {
+                if (trashCan.body.getFixtureList().contains(fixtureA, true) ||
+                    trashCan.body.getFixtureList().contains(fixtureB, true)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        private boolean isContactWithTrashCanAbsolute(Fixture fixtureA, Fixture fixtureB,int id) {
+            for (TrashCanInstance trashCan : trashcans) {
+                if (trashCan.body.getFixtureList().contains(fixtureA, true) ||
+                    trashCan.body.getFixtureList().contains(fixtureB, true)) {
+                    if(trashCan.id==id)return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean isContactWithTrashBag(Fixture fixtureA, Fixture fixtureB) {
+            for (TrashBagInstance trashBag : trashbags) {
+                if (trashBag.body.getFixtureList().contains(fixtureA, true) ||
+                    trashBag.body.getFixtureList().contains(fixtureB, true)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean isContactWithObject(Fixture fixtureA, Fixture fixtureB) {
+            for (ObjectInstance object : objects) {
+                if (object.body.getFixtureList().contains(fixtureA, true) ||
+                    object.body.getFixtureList().contains(fixtureB, true)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+
 }
