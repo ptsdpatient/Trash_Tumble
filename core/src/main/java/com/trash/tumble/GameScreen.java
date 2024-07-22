@@ -837,6 +837,13 @@ public class GameScreen implements Screen {
         }
         for(TrashCanInstance obj : trashCanInstances){
             obj.render(batch);
+            for(TrashBagInstance bag : trashBagInstances){
+                if(bag.object.getBoundingRectangle().overlaps(obj.object.getBoundingRectangle())&&obj.id==bag.id){
+                    gameWon=true;
+                    gameRun=false;
+                    trashBagInstances.removeValue(bag,true);
+                }
+            }
         }
         for(TrashBagInstance obj : trashBagInstances){
             obj.render(batch);
@@ -846,12 +853,19 @@ public class GameScreen implements Screen {
             ray.render(batch);
             for(ObjectInstance obj : objectInstances){
                 if(ray.object.getBoundingRectangle().overlaps(obj.object.getBoundingRectangle())){
-                    print("collision, mass : "+obj.body.getMass());
                     Vector2 force;
                     switch(ray.id) {
                         case 0:{
                         force = new Vector2(0, 20000f * obj.body.getMass());
                         obj.body.applyForceToCenter(force, true);
+                        obj.body.applyTorque(400000f*obj.body.getMass(),true);
+                        }break;
+                        case 1:{
+                            obj.body.applyTorque(600000f*obj.body.getMass(),true);
+                        }break;
+                        case 2:{
+                            world.destroyBody(obj.body);
+                            objectInstances.removeValue(obj,true);
                         }break;
                     }
                     rays.removeValue(ray,true);
@@ -1129,7 +1143,7 @@ public class GameScreen implements Screen {
                                 rays.add(new RayInstance(raySheet[specialObj.id-2],rayX,rayY,specialObj.object.getRotation(),specialObj.scale-0.8f,700f,specialObj.id-2));
                             }break;
                             case 5:{
-                                world.setGravity(new Vector2(-world.getGravity().y,0));
+                                world.setGravity(new Vector2(-9.8f*2,0));
                                    }break;
                             case 6:{
                                 world.setGravity(new Vector2(0,-world.getGravity().y));
@@ -1141,13 +1155,7 @@ public class GameScreen implements Screen {
                     }
                 }
             }
-            for(TrashBagInstance bag : trashbags){
-                if(isContactWithTrashCanAbsolute(fixtureA,fixtureB,bag.id)){
-                   gameWon=true;
-                   gameRun=false;
-                   trashbags.removeValue(bag,true);
-                }
-            }
+
         }
         private boolean isContactWithTrashCan(Fixture fixtureA, Fixture fixtureB) {
             for (TrashCanInstance trashCan : trashcans) {

@@ -4,6 +4,7 @@ import static com.trash.tumble.Methods.extractSprite;
 import static com.trash.tumble.Methods.files;
 import static com.trash.tumble.Methods.print;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputProcessor;
@@ -71,7 +72,7 @@ public class LevelEdit implements Screen {
         this.batch=game.batch;
         json= new Json();
         json.setSerializer(GameMap.class, new GameMapSerializer());
-        levelFile= Gdx.files.local("levels.txt");
+        if(Gdx.app.getType()!= Application.ApplicationType.WebGL)levelFile= Gdx.files.local("levels.txt");
         for(int i =0;i<3;i++)backgrounds[i]=new Texture(files("gameBG_"+(i+1)+".png"));
 
         camera=new OrthographicCamera();
@@ -653,7 +654,7 @@ public class LevelEdit implements Screen {
                             gameMap=json.toJson(gameMapList);
                             print(gameMap);
 
-                            levelFile.writeString(gameMap+","+currentBG+"\n", true);
+                            if(Gdx.app.getType()!= Application.ApplicationType.WebGL)levelFile.writeString(gameMap+","+currentBG+"\n", true);
 
                             game.startGame(gameMap,currentBG);
                             gameMapList.clear();
