@@ -45,6 +45,7 @@ public class TrashTumble extends Game {
     }
 
     public void startGame(String gameMap,int currentBG){
+        gameScreen.worldSet();
         gameScreen.setGameMap(gameMap);
         gameScreen.setBG(currentBG);
         this.setScreen(gameScreen);
@@ -53,7 +54,7 @@ public class TrashTumble extends Game {
         this.setScreen(levelEdit);
     }
     public void setLevelScreen(){
-        levelScreen.loadLevels();
+//        levelScreen.loadLevels();
         this.setScreen(levelScreen);
     }
     public void setMenuScreen(){

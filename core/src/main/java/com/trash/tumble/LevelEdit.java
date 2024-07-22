@@ -15,6 +15,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -24,8 +25,7 @@ import com.badlogic.gdx.utils.SnapshotArray;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-import java.awt.Point;
-import java.awt.Rectangle;
+
 
 public class LevelEdit implements Screen {
     private TrashTumble game;
@@ -71,7 +71,7 @@ public class LevelEdit implements Screen {
         this.batch=game.batch;
         json= new Json();
         json.setSerializer(GameMap.class, new GameMapSerializer());
-        levelFile= Gdx.files.local("levels.txt");
+//        levelFile= Gdx.files.local("levels.txt");
         for(int i =0;i<3;i++)backgrounds[i]=new Texture(files("gameBG_"+(i+1)+".png"));
 
         camera=new OrthographicCamera();
@@ -554,21 +554,21 @@ public class LevelEdit implements Screen {
                         }
                         for(PanelTrashCan can : panelTrashCans){
                             if(can.button.getBoundingRectangle().contains(point)){
-                                initializeDrag(can.button,can.id,0,can.scale);
+                                initializeDrag(can.button,can.id,1,can.scale);
                             }
                         }
                     }break;
                     case 1:{
                         for(PanelObject object : panelObjects){
                             if(object.button.getBoundingRectangle().contains(point)){
-                                initializeDrag(object.button,object.id,1,object.scale);
+                                initializeDrag(object.button,object.id,2,object.scale);
                             }
                         }
                     }break;
                     case 2:{
                         for(SpecialObject object : specialObjects){
                             if(object.button.getBoundingRectangle().contains(point)){
-                                initializeDrag(object.button,object.id,2,object.scale);
+                                initializeDrag(object.button,object.id,3,object.scale);
                             }
                         }
                     }break;
@@ -654,9 +654,10 @@ public class LevelEdit implements Screen {
                             gameMap=json.toJson(gameMapList);
                             print(gameMap);
 
-                            levelFile.writeString(gameMap+","+currentBG+"\n", true);
+//                            levelFile.writeString(gameMap+","+currentBG+"\n", true);
                             game.startGame(gameMap,currentBG);
-
+                            gameMapList.clear();
+                            sceneObjects.clear();
                             }break;
                         case 2:
                             showPanel = !showPanel;
@@ -848,7 +849,7 @@ public class LevelEdit implements Screen {
         dragType=type;
 
         draggable=new Sprite(tex);
-        draggable.setScale(scale+(type==0?0.2f:0.8f));
+        draggable.setScale(scale+(type<2?0.2f:0.8f));
 
 //        print(scale+" : "+draggable.getScaleX());
         dragCoordinates = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
@@ -873,7 +874,18 @@ public class LevelEdit implements Screen {
 
     @Override
     public void dispose() {
-        batch.dispose();
+        for(TextureRegion tex : editButtonSheet) tex.getTexture().dispose();
+        for(TextureRegion tex : uiBoxSheet) tex.getTexture().dispose();
+        for(TextureRegion tex : editObjectSheet) tex.getTexture().dispose();
+        for(TextureRegion tex : editPanelButtonSheet) tex.getTexture().dispose();
+        for(TextureRegion tex : trashBagSheet) tex.getTexture().dispose();
+        for(TextureRegion tex : trashCanSheet) tex.getTexture().dispose();
+        for(TextureRegion tex : panelObjectSheet) tex.getTexture().dispose();
+        for(TextureRegion tex : specialObjectSheet) tex.getTexture().dispose();
+        for(TextureRegion tex : selectSheet) tex.getTexture().dispose();
+        for(Texture tex : backgrounds) tex.dispose();
+        draggable.getTexture().dispose();
 
+        batch.dispose();
     }
 }

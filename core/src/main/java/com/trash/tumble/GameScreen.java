@@ -46,9 +46,10 @@ public class GameScreen implements Screen {
     Array<GameMap> gameMap = new Array<>();
     private World world;
     private Box2DDebugRenderer debugRenderer;
-    boolean gameRun=true;
+    boolean gameRun=true,gameWon=false;
     float simulationSpeed=1;
     int gameBG=0;
+    Sprite nextGameButton;
     Vector3 touch;
     Vector2 point;
     TextureRegion[] gameButtonSheet,backgrounds,objectSheet,specialSheet,trashCanSheet,trashBagSheet;
@@ -60,10 +61,32 @@ public class GameScreen implements Screen {
     Array<TrashCanInstance> trashCanInstances=new Array<>();
 
 
-    String[] gameButtonNames={"slow","fast","restart","pause","play","levels","home","next"};
+    String[] gameButtonNames={"slow","fast","restart","pause","play","back","home"};
 
     public void setBG(int currentBG) {
         gameBG=currentBG;
+    }
+
+    public void worldSet(){
+        gameWon=false;
+        gameRun=true;
+        objectInstances.clear();
+        specialInstances.clear();
+        trashBagInstances.clear();
+        trashCanInstances.clear();
+        world.dispose();
+        world = new World(new Vector2(0, -9.8f*5), true);
+        debugRenderer = new Box2DDebugRenderer();
+
+        BodyDef groundBodyDef = new BodyDef();
+        groundBodyDef.position.set(1280/4f, 1);
+        Body groundBody = world.createBody(groundBodyDef);
+
+        PolygonShape groundBox = new PolygonShape();
+        groundBox.setAsBox(1280/2f, 2);
+        groundBody.createFixture(groundBox, 0.0f);
+        groundBox.dispose();
+
     }
 
     public static class GameMap{
@@ -540,7 +563,6 @@ public class GameScreen implements Screen {
         public void render(SpriteBatch sb){
             object.setPosition(body.getPosition().x+xDiff - object.getWidth() / 2, body.getPosition().y+yDiff - object.getHeight() / 2);
             object.setRotation((float) Math.toDegrees(body.getAngle()));
-
             object.draw(sb);
 
         }
@@ -632,7 +654,7 @@ public class GameScreen implements Screen {
         public GameButton(TextureRegion tex,String name,int id){
             button=new Sprite(tex);
             button.setScale(scale);
-            button.setPosition(1280/2f-(45*gameButtonSheet.length)+id*42,720/2f-55);
+            button.setPosition(1280/2f-(60*gameButtonSheet.length)+id*42,720/2f-55);
             this.name=name;
             this.id=id;
         }
@@ -663,22 +685,16 @@ public class GameScreen implements Screen {
         viewport=new ExtendViewport(1280/2f,720/2f,camera);
         viewport.apply();
         world = new World(new Vector2(0, -9.8f*5), true);
-        debugRenderer = new Box2DDebugRenderer();
-
-        BodyDef groundBodyDef = new BodyDef();
-        groundBodyDef.position.set(1280/4f, 1);
-        Body groundBody = world.createBody(groundBodyDef);
-
-        PolygonShape groundBox = new PolygonShape();
-        groundBox.setAsBox(1280/2f, 2);
-        groundBody.createFixture(groundBox, 0.0f);
-        groundBox.dispose();
+        worldSet();
 
         gameButtonSheet=extractSprite(files("game_button_sheet.png"),64,64);
         objectSheet=extractSprite(files("objects_sheet.png"),64,64);
         specialSheet=extractSprite(files("special_object_sheet.png"),64,64);
         trashCanSheet=extractSprite(files("trashcan_sheet.png"),192,192);
         trashBagSheet=extractSprite(files("trashbag_sheet.png"),128,128);
+        nextGameButton=new Sprite(new Texture(files("nextLevel.png")));
+        nextGameButton.setPosition(1280/4f-nextGameButton.getWidth()/2f,720/4f-nextGameButton.getHeight()/2f);
+
 
         int index=0;
         for(String name : gameButtonNames){
@@ -691,8 +707,8 @@ public class GameScreen implements Screen {
             backgrounds[i-1]=new TextureRegion(new Texture(files("gameBG_"+i+".png")));
         }
 
-        gameMap.add(new GameMap(0,1,300,220,0,0.5f));
-        initializeWorld();
+
+
     }
 
     private void initializeWorld() {
@@ -718,7 +734,7 @@ public class GameScreen implements Screen {
     public void setGameMap(String gameMapSchema){
         gameMap=new Array<>();
         gameMapParser(gameMapSchema);
-        print(gameMap.size);
+        initializeWorld();
     }
 
     @Override
@@ -730,9 +746,11 @@ public class GameScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
         batch.draw(backgrounds[gameBG],0,0,1280/2f,720/2f);
+
         if(gameRun){
             world.step(delta*simulationSpeed, 6, 2);
         }
+
 
         for(GameButton btn : gameButtonList){
             btn.render(batch);
@@ -748,9 +766,20 @@ public class GameScreen implements Screen {
         }
         for(TrashBagInstance obj : trashBagInstances){
             obj.render(batch);
+            for(TrashCanInstance can : trashCanInstances){
+                if(can.object.getBoundingRectangle().overlaps(obj.object.getBoundingRectangle())){
+                    gameRun=false;
+                    gameWon=true;
+                    trashBagInstances.removeValue(obj,true);
+                }
+            }
+        }
+
+        if(gameWon){
+            nextGameButton.draw(batch);
         }
         batch.end();
-        debugRenderer.render(world, camera.combined);
+//        debugRenderer.render(world, camera.combined);
 
     }
 
@@ -782,6 +811,9 @@ public class GameScreen implements Screen {
                 touch = new Vector3(screenX,screenY,0);
                 camera.unproject(touch);
                 point = new Vector2(touch.x,touch.y);
+                if(nextGameButton.getBoundingRectangle().contains(point)){
+                    game.setLevelScreen();
+                }
                 for(GameButton btn :gameButtonList){
                     if(btn.button.getBoundingRectangle().contains(point)){
                         switch(btn.name){
@@ -792,7 +824,8 @@ public class GameScreen implements Screen {
                                 simulationSpeed=3f;
                             }break;
                             case "restart":{
-                                gameMap.clear();
+                                world.dispose();
+                                worldSet();
                                 objectInstances.clear();
                                 specialInstances.clear();
                                 trashBagInstances.clear();
@@ -806,15 +839,13 @@ public class GameScreen implements Screen {
                                 gameRun=true;
                                 simulationSpeed=1f;
                             }break;
-                            case "levels":{
-
+                            case "back":{
+                                game.setLevelScreen();
                             }break;
                             case "home":{
                                 game.setMenuScreen();
                             }break;
-                            case "next":{
 
-                            }break;
                         }
                     }
                 }
@@ -872,6 +903,12 @@ public class GameScreen implements Screen {
 
     @Override
     public void dispose() {
+        for(TextureRegion tex : gameButtonSheet) tex.getTexture().dispose();
+        for(TextureRegion tex : backgrounds) tex.getTexture().dispose();
+        for(TextureRegion tex : objectSheet) tex.getTexture().dispose();
+        for(TextureRegion tex : specialSheet) tex.getTexture().dispose();
+        for(TextureRegion tex : trashCanSheet) tex.getTexture().dispose();
+        for(TextureRegion tex : trashBagSheet) tex.getTexture().dispose();
         world.dispose();
         batch.dispose();
         debugRenderer.dispose();

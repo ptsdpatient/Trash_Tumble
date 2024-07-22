@@ -17,6 +17,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -24,8 +25,6 @@ import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.trash.tumble.Methods;
 
-import java.awt.Point;
-import java.awt.Rectangle;
 
 public class StartMenu implements Screen {
     private TrashTumble game;
@@ -171,7 +170,7 @@ public class StartMenu implements Screen {
                 camera.unproject(touch);
                 point = new Vector2(touch.x,touch.y);
                 for(Button button : buttonList){
-                    button.active=button.bounds.contains(new Point((int) point.x, (int) point.y));
+                    button.active=button.bounds.contains(point);
                 }
                 return false;
             }
@@ -236,6 +235,8 @@ public class StartMenu implements Screen {
         for(TextureRegion tex : buttonSheet){
             tex.getTexture().dispose();
         }
+        shapeRenderer.dispose();
+        background.dispose();
         batch.dispose();
     }
 }

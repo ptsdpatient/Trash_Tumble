@@ -38,14 +38,42 @@ public class LevelScreen implements Screen {
     BitmapFont titleFont,dataFont;
     GlyphLayout titleLayout;
     Texture background;
-    TextureRegion[] uiBox;
+    TextureRegion[] uiBox,buttonSheet;
     Array<LevelButton> levelButtons=new Array<>();
+    Array<GameButton> gameButtons=new Array<>();
     FileHandle levelFile;
     Vector3 touch;
     Vector2 point;
 
 
-
+    public class GameButton{
+        Sprite button;
+        String name;
+        int id;
+        boolean active=false;
+        float scale=0.6f;
+        public GameButton(TextureRegion tex,String name,int id){
+            button=new Sprite(tex);
+            button.setScale(scale);
+            button.setPosition(1280/2f-80,720/2f-64);
+            this.name=name;
+            this.id=id;
+        }
+        public void render(SpriteBatch sb){
+            button.draw(sb);
+            if(active){
+                if(scale<0.67f){
+                    scale+=Gdx.graphics.getDeltaTime()*1.1f;
+                }
+                button.setScale(scale);
+            }else{
+                if(scale>0.6f){
+                    scale-=Gdx.graphics.getDeltaTime();
+                    button.setScale(scale);
+                }
+            }
+        }
+    }
     public class LevelButton{
         Sprite button;
         String gameMap;
@@ -97,15 +125,19 @@ public class LevelScreen implements Screen {
         background=new Texture(files("level_select.png"));
 
         uiBox=extractSprite(files("ui_box_sheet.png"),64,64);
+        buttonSheet=extractSprite(files("game_button_sheet.png"),64,64);
+
+        gameButtons.add(new GameButton(buttonSheet[6],"close",0));
     }
 
     public void loadLevels(){
+        levelButtons.clear();
         levelFile= Gdx.files.local("levels.txt");
         String[] lines = levelFile.readString().split("\n");
         String[] bgParse;
-        int i=0,j=0,index=0,bg=0;
+        int i=0,j=0,index=0;
         for(String line : lines){
-            bg=Character.getNumericValue(line.charAt(line.length()-1));
+            int bg=line.charAt(line.length()-1)-'0';
             if(i>8){
                 j++;
                 i=0;
@@ -127,6 +159,9 @@ public class LevelScreen implements Screen {
         batch.draw(background,0,0,1280/2f,720/2f);
         titleFont.draw(batch,"SELECT LEVEL",1280/4f-titleLayout.width/2f,720/2f-10);
         for(LevelButton btn : levelButtons){
+            btn.render(batch);
+        }
+        for(GameButton btn : gameButtons){
             btn.render(batch);
         }
         batch.end();
@@ -186,6 +221,12 @@ public class LevelScreen implements Screen {
                         break;
                     }
                 }
+                for(GameButton btn : gameButtons){
+                    if(btn.button.getBoundingRectangle().contains(point)){
+                        game.setMenuScreen();
+                        break;
+                    }
+                }
 
                 return false;
             }
@@ -203,6 +244,9 @@ public class LevelScreen implements Screen {
                 for(LevelButton btn : levelButtons){
                     btn.active=btn.button.getBoundingRectangle().contains(point);
                 }
+                for(GameButton btn : gameButtons){
+                    btn.active=btn.button.getBoundingRectangle().contains(point);
+                }
                 return false;
             }
 
@@ -213,6 +257,9 @@ public class LevelScreen implements Screen {
                 point = new Vector2(touch.x,touch.y);
                 for(LevelButton btn : levelButtons){
                         btn.active=btn.button.getBoundingRectangle().contains(point);
+                }
+                for(GameButton btn : gameButtons){
+                    btn.active=btn.button.getBoundingRectangle().contains(point);
                 }
                 return false;
             }
@@ -226,6 +273,11 @@ public class LevelScreen implements Screen {
 
     @Override
     public void dispose() {
+        for(TextureRegion tex : uiBox) tex.getTexture().dispose();
+        for(TextureRegion tex : buttonSheet) tex.getTexture().dispose();
+        background.dispose();
+        titleFont.dispose();
+        dataFont.dispose();
         batch.dispose();
     }
 }
