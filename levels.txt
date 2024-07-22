@@ -1,5 +1,1 @@
-[{id:0,type:0,x:314,y:116.000015,rotation:0,scale:0.7},{id:0,type:0,x:295,y:17.000008,rotation:0,scale:0.6}],1
-[{id:0,type:0,x:314,y:116.000015,rotation:0,scale:0.7},{id:0,type:0,x:295,y:17.000008,rotation:0,scale:0.6},{id:0,type:0,x:314,y:116.000015,rotation:0,scale:0.7},{id:0,type:0,x:295,y:17.000008,rotation:0,scale:0.6}],0
-[{id:0,type:0,x:314,y:116.000015,rotation:0,scale:0.7},{id:0,type:0,x:295,y:17.000008,rotation:0,scale:0.6}],1
-[{id:3,type:0,x:275,y:192.00003,rotation:0,scale:0.69619125},{id:0,type:0,x:247,y:-25.999992,rotation:0,scale:0.59816515}],1
-[{id:0,type:0,x:383,y:176.00003,rotation:0,scale:0.7},{id:0,type:1,x:365,y:15.000008,rotation:0,scale:0.6}],1
+[{id:2,type:1,x:262,y:90.250015,rotation:0,scale:0.39925587},{id:2,type:0,x:255.5,y:223.25003,rotation:0,scale:0.33949754}],2

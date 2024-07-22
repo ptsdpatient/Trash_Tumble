@@ -86,7 +86,6 @@ public class GameScreen implements Screen {
         groundBox.setAsBox(1280/2f, 2);
         groundBody.createFixture(groundBox, 0.0f);
         groundBox.dispose();
-
     }
 
     public static class GameMap{
@@ -120,9 +119,9 @@ public class GameScreen implements Screen {
                 case 0:{
                     width=7;
                     height=object.getHeight();
-                    density=2000;
+                    density=200;
                     friction=10;
-                    restitution=0.7f;
+                    restitution=0.6f;
                 }break;
                 case 1:{
                     width=14;
@@ -169,7 +168,7 @@ public class GameScreen implements Screen {
                     xDiff=0;
                     height=object.getHeight()/1.15f;
                     density=20;
-                    friction=0;
+                    friction=30;
                     restitution=0.4f;
                 }break;
                 case 7:{
@@ -177,9 +176,9 @@ public class GameScreen implements Screen {
                     xDiff=0;
                     yDiff=2;
                     height=object.getHeight()/1.55f;
-                    density=20;
-                    friction=0;
-                    restitution=0.4f;
+                    density=200;
+                    friction=30;
+                    restitution=0.3f;
                 }break;
                 case 8:{
                     width=30;
@@ -589,6 +588,27 @@ public class GameScreen implements Screen {
                     friction=30;
                     restitution=0.3f;
                 }break;
+                case 1:{
+                    width=object.getWidth()/1.5f;
+                    height=object.getHeight()/1.1f;
+                    density=30;
+                    friction=30;
+                    restitution=0.3f;
+                }break;
+                case 2:{
+                    width=object.getWidth()/1.5f;
+                    height=object.getHeight()/1.1f;
+                    density=30;
+                    friction=30;
+                    restitution=0.3f;
+                }break;
+                case 3:{
+                    width=object.getWidth()/1.5f;
+                    height=object.getHeight()/1.1f;
+                    density=30;
+                    friction=30;
+                    restitution=0.3f;
+                }break;
 
 
             }
@@ -779,7 +799,7 @@ public class GameScreen implements Screen {
             nextGameButton.draw(batch);
         }
         batch.end();
-//        debugRenderer.render(world, camera.combined);
+        debugRenderer.render(world, camera.combined);
 
     }
 
@@ -811,7 +831,7 @@ public class GameScreen implements Screen {
                 touch = new Vector3(screenX,screenY,0);
                 camera.unproject(touch);
                 point = new Vector2(touch.x,touch.y);
-                if(nextGameButton.getBoundingRectangle().contains(point)){
+                if(nextGameButton.getBoundingRectangle().contains(point)&&gameWon&&!gameRun){
                     game.setLevelScreen();
                 }
                 for(GameButton btn :gameButtonList){
@@ -824,12 +844,12 @@ public class GameScreen implements Screen {
                                 simulationSpeed=3f;
                             }break;
                             case "restart":{
-                                world.dispose();
+//                                world.dispose();
                                 worldSet();
-                                objectInstances.clear();
-                                specialInstances.clear();
-                                trashBagInstances.clear();
-                                trashCanInstances.clear();
+//                                objectInstances.clear();
+//                                specialInstances.clear();
+//                                trashBagInstances.clear();
+//                                trashCanInstances.clear();
                                 initializeWorld();
                             }break;
                             case "pause":{

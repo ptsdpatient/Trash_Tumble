@@ -71,7 +71,7 @@ public class LevelEdit implements Screen {
         this.batch=game.batch;
         json= new Json();
         json.setSerializer(GameMap.class, new GameMapSerializer());
-//        levelFile= Gdx.files.local("levels.txt");
+        levelFile= Gdx.files.local("levels.txt");
         for(int i =0;i<3;i++)backgrounds[i]=new Texture(files("gameBG_"+(i+1)+".png"));
 
         camera=new OrthographicCamera();
@@ -647,14 +647,14 @@ public class LevelEdit implements Screen {
                             game.setMenuScreen();
                             break;
                         case 1: {
-
                             for(SceneObject object : sceneObjects){
-                                gameMapList.add(new GameMap(object.id,object.type,object.object.getX(),object.object.getY(),object.object.getRotation(),object.scale));
+                                gameMapList.add(new GameMap(object.id,object.type,object.object.getX()+object.object.getWidth()/2f,object.object.getY()+object.object.getHeight()/2f,object.object.getRotation(),object.scale));
                             }
                             gameMap=json.toJson(gameMapList);
                             print(gameMap);
 
-//                            levelFile.writeString(gameMap+","+currentBG+"\n", true);
+                            levelFile.writeString(gameMap+","+currentBG+"\n", true);
+
                             game.startGame(gameMap,currentBG);
                             gameMapList.clear();
                             sceneObjects.clear();

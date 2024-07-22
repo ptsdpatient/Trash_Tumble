@@ -54,7 +54,7 @@ public class TrashTumble extends Game {
         this.setScreen(levelEdit);
     }
     public void setLevelScreen(){
-//        levelScreen.loadLevels();
+        levelScreen.loadLevels();
         this.setScreen(levelScreen);
     }
     public void setMenuScreen(){
