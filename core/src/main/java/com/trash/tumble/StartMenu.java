@@ -161,6 +161,12 @@ public class StartMenu implements Screen {
 
             @Override
             public boolean touchDragged(int screenX, int screenY, int pointer) {
+                touch = new Vector3(screenX,screenY,0);
+                camera.unproject(touch);
+                point = new Vector2(touch.x,touch.y);
+                for(Button button : buttonList){
+                    button.active=button.bounds.contains(point);
+                }
                 return false;
             }
 
