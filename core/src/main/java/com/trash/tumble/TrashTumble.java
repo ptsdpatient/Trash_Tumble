@@ -1,5 +1,7 @@
 package com.trash.tumble;
 
+import static com.trash.tumble.Methods.print;
+
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
@@ -29,7 +31,6 @@ public class TrashTumble extends Game {
     private GameScreen gameScreen;
     private LevelEdit levelEdit;
     private LevelScreen levelScreen;
-    public InputMultiplexer inputMultiplexer;
 
 
     @Override
@@ -45,6 +46,7 @@ public class TrashTumble extends Game {
 
     public void startGame(String gameMap,int currentBG){
         gameScreen.worldSet();
+//        print(gameMap+"_"+currentBG);
         gameScreen.setGameMap(gameMap);
         gameScreen.setBG(currentBG);
         this.setScreen(gameScreen);

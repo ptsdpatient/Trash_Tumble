@@ -126,29 +126,25 @@ public class LevelScreen implements Screen {
         titleLayout=new GlyphLayout(titleFont,"SELECT LEVEL");
         background=new Texture(files("level_select.png"));
 
+        levelFile= Gdx.files.local("levels.txt");
+
+
         uiBox=extractSprite(files("ui_box_sheet.png"),64,64);
         buttonSheet=extractSprite(files("game_button_sheet.png"),64,64);
 
         gameButtons.add(new GameButton(buttonSheet[6],"close",0));
 
-        levels="[{id:2,type:1,x:262,y:90.250015,rotation:0,scale:0.39925587},{id:2,type:0,x:255.5,y:223.25003,rotation:0,scale:0.33949754}],2\n" +
-            "[{id:1,type:1,x:452,y:82.00001,rotation:0,scale:0.6},{id:1,type:0,x:329,y:309.00003,rotation:0,scale:0.85121155},{id:0,type:2,x:247,y:111.00001,rotation:180,scale:3.2978265},{id:0,type:2,x:345,y:96.000015,rotation:180,scale:2.7908616},{id:3,type:2,x:305,y:217.00002,rotation:255,scale:2.8958943}],1\n" +
-            "[{id:6,type:3,x:516,y:47.000015,rotation:0,scale:1.5477045},{id:2,type:2,x:507,y:216.00003,rotation:0,scale:1.5515044},{id:0,type:1,x:333,y:276,rotation:540,scale:0.5979814},{id:9,type:2,x:234,y:37,rotation:0,scale:1.5530595},{id:5,type:2,x:420,y:32,rotation:0,scale:1.5620508},{id:0,type:0,x:330,y:129,rotation:0,scale:0.7}],0\n" +
-            "[{id:0,type:3,x:327,y:75,rotation:345,scale:1.5513041},{id:0,type:0,x:354,y:254.00003,rotation:15,scale:0.69548595},{id:0,type:1,x:468,y:51,rotation:0,scale:0.6}],0\n" +
-            "[{id:2,type:3,x:252,y:112.000015,rotation:0,scale:1.5472399},{id:5,type:2,x:278,y:37,rotation:0,scale:1.5508593},{id:0,type:2,x:543,y:120.000015,rotation:0,scale:3.449668},{id:8,type:2,x:607,y:94.00001,rotation:0,scale:2.6041427},{id:0,type:1,x:484,y:46,rotation:0,scale:0.38754106},{id:0,type:0,x:379,y:133,rotation:0,scale:0.39932206},{id:14,type:2,x:376,y:43,rotation:0,scale:1.552988},{id:2,type:2,x:255,y:278.00003,rotation:0,scale:1.5519629}],0\n" +
-            "[{id:2,type:3,x:302,y:70.00001,rotation:0,scale:1.5530918},{id:2,type:2,x:408,y:83,rotation:0,scale:1.5530584},{id:13,type:2,x:302,y:157.00002,rotation:0,scale:0.9506175}],0\n";
+        levels="[{id:2,type:1,x:262,y:90.250015,rotation:0,scale:0.39925587},{id:2,type:0,x:255.5,y:223.25003,rotation:0,scale:0.33949754}],2\n[{id:1,type:1,x:452,y:82.00001,rotation:0,scale:0.6},{id:1,type:0,x:329,y:309.00003,rotation:0,scale:0.85121155},{id:0,type:2,x:247,y:111.00001,rotation:180,scale:3.2978265},{id:0,type:2,x:345,y:96.000015,rotation:180,scale:2.7908616},{id:3,type:2,x:305,y:217.00002,rotation:255,scale:2.8958943}],1\n[{id:6,type:3,x:516,y:47.000015,rotation:0,scale:1.5477045},{id:2,type:2,x:507,y:216.00003,rotation:0,scale:1.5515044},{id:0,type:1,x:333,y:276,rotation:540,scale:0.5979814},{id:9,type:2,x:234,y:37,rotation:0,scale:1.5530595},{id:5,type:2,x:420,y:32,rotation:0,scale:1.5620508},{id:0,type:0,x:330,y:129,rotation:0,scale:0.7}],0\n[{id:0,type:3,x:327,y:75,rotation:345,scale:1.5513041},{id:0,type:0,x:354,y:254.00003,rotation:15,scale:0.69548595},{id:0,type:1,x:468,y:51,rotation:0,scale:0.6}],0\n[{id:2,type:3,x:252,y:112.000015,rotation:0,scale:1.5472399},{id:5,type:2,x:278,y:37,rotation:0,scale:1.5508593},{id:0,type:2,x:543,y:120.000015,rotation:0,scale:3.449668},{id:8,type:2,x:607,y:94.00001,rotation:0,scale:2.6041427},{id:0,type:1,x:484,y:46,rotation:0,scale:0.38754106},{id:0,type:0,x:379,y:133,rotation:0,scale:0.39932206},{id:14,type:2,x:376,y:43,rotation:0,scale:1.552988},{id:2,type:2,x:255,y:278.00003,rotation:0,scale:1.5519629}],0\n[{id:2,type:3,x:302,y:70.00001,rotation:0,scale:1.5530918},{id:2,type:2,x:408,y:83,rotation:0,scale:1.5530584},{id:13,type:2,x:302,y:157.00002,rotation:0,scale:0.9506175}],0\n";
+
     }
 
     public void loadLevels(){
         levelButtons.clear();
-        String[] lines;
-        if(Gdx.app.getType()!= Application.ApplicationType.WebGL){
-            levelFile= Gdx.files.local("levels.txt");
-            lines = levelFile.readString().split("\n");
-        }else{
-            lines=levels.split("\n");
-        }
+//        String[] lines=levels.split("\n");
 
+
+        levelFile=Gdx.files.local("levels.txt");
+        String[] lines = levelFile.readString().split("\n");
 
         int i=0,j=0,index=0;
         for(String line : lines){
@@ -161,6 +157,7 @@ public class LevelScreen implements Screen {
             i++;
             index++;
         }
+
     }
 
     @Override

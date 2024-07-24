@@ -24,7 +24,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+//import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.ContactImpulse;
@@ -54,7 +54,7 @@ public class GameScreen implements Screen {
     private Viewport viewport;
     Array<GameMap> gameMap = new Array<>();
     private World world;
-    private Box2DDebugRenderer debugRenderer;
+//    private Box2DDebugRenderer debugRenderer;
     boolean gameRun=true,gameWon=false;
     float simulationSpeed=1,time=0f;
     int gameBG=0;
@@ -88,7 +88,7 @@ public class GameScreen implements Screen {
         trashCanInstances.clear();
         world.dispose();
         world = new World(new Vector2(0, -9.8f*5*(gameBG==1?0.4f:1)), true);
-        debugRenderer = new Box2DDebugRenderer();
+//        debugRenderer = new Box2DDebugRenderer();
 
         BodyDef groundBodyDef = new BodyDef();
         groundBodyDef.position.set(1280/4f, 1);
@@ -806,6 +806,8 @@ public class GameScreen implements Screen {
 
     public void setGameMap(String gameMapSchema){
         gameMap=new Array<>();
+//        print("see this line?");
+//        print(gameMapSchema);
         gameMapParser(gameMapSchema);
         initializeWorld();
     }
@@ -879,7 +881,7 @@ public class GameScreen implements Screen {
             nextGameButton.draw(batch);
         }
         batch.end();
-        debugRenderer.render(world, camera.combined);
+//        debugRenderer.render(world, camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
         shapeRenderer.end();
@@ -1016,54 +1018,76 @@ public class GameScreen implements Screen {
         for(TextureRegion tex : trashBagSheet) tex.getTexture().dispose();
         world.dispose();
         batch.dispose();
-        debugRenderer.dispose();
+//        debugRenderer.dispose();
     }
 
 
     public void gameMapParser(String gameSchema){
-        String data=gameSchema.replace("[", "").replace("]", "");
-        int start = -1;
-        int end;
-        for (int i = 0; i < data.length(); i++) {
-            char ch = data.charAt(i);
+//        String data=gameSchema.replace("[", "").replace("]", "");
+//        int start = -1;
+//        int end;
+//        for (int i = 0; i < data.length(); i++) {
+//            char ch = data.charAt(i);
+//
+//            if (ch == '{') {
+//                start = i;
+//            } else if (ch == '}' && start != -1) {
+//                end = i;
+//                String line = data.substring(start + 1, end);
+//                Pattern pattern = Pattern.compile("(\\w+):(\\d+\\.\\d+|\\d+)");
+//                Matcher matcher = pattern.matcher(line);
+//                float id=0,objType=0,x=0,y=0,rotation=0,scale=0;
+//                while (matcher.find()) {
+//                    String key = matcher.group(1);
+//                    String valueStr = matcher.group(2);
+//                    float value = Float.parseFloat(valueStr);
+//                    switch(key){
+//                        case "id":{
+//                            id=value;
+//                        }break;
+//                        case "type":{
+//                            objType=value;
+//                        }break;
+//                        case "x":{
+//                            x=value;
+//                        }break;
+//                        case "y":{
+//                            y=value;
+//                        }break;
+//                        case "rotation":{
+//                            rotation=value;
+//                        }break;
+//                        case "scale":{
+//                            scale=value;
+//                        }break;
+//                    }
+//                }
+//                gameMap.add(new GameMap((int) id,(int) objType,x,y,rotation,scale));
+//                start = -1;
+//            }
+//        }
 
-            if (ch == '{') {
-                start = i;
-            } else if (ch == '}' && start != -1) {
-                end = i;
-                String line = data.substring(start + 1, end);
-                Pattern pattern = Pattern.compile("(\\w+):(\\d+\\.\\d+|\\d+)");
-                Matcher matcher = pattern.matcher(line);
-                float id=0,objType=0,x=0,y=0,rotation=0,scale=0;
-                while (matcher.find()) {
-                    String key = matcher.group(1);
-                    String valueStr = matcher.group(2);
-                    float value = Float.parseFloat(valueStr);
-                    switch(key){
-                        case "id":{
-                            id=value;
-                        }break;
-                        case "type":{
-                            objType=value;
-                        }break;
-                        case "x":{
-                            x=value;
-                        }break;
-                        case "y":{
-                            y=value;
-                        }break;
-                        case "rotation":{
-                            rotation=value;
-                        }break;
-                        case "scale":{
-                            scale=value;
-                        }break;
-                    }
-                }
-                gameMap.add(new GameMap((int) id,(int) objType,x,y,rotation,scale));
-                start = -1;
-            }
+
+//        List<GameMap> gameMap = new ArrayList<>();
+
+        // Remove the trailing ",0" and ensure it's a valid JSON array
+//        print(gameSchema);
+//        return true;
+        String validJson = gameSchema.replaceAll(",0$", "");
+
+        Json json = new Json();
+        Array<JsonValue> root = json.fromJson(Array.class, validJson);
+
+        for (JsonValue entry : root) {
+            int id = entry.getInt("id");
+            int type = entry.getInt("type");
+            float x = entry.getFloat("x");
+            float y = entry.getFloat("y");
+            float rotation = entry.getFloat("rotation");
+            float scale = entry.getFloat("scale");
+            gameMap.add(new GameMap(id, type, x, y, rotation, scale));
         }
+
     }
 
 
